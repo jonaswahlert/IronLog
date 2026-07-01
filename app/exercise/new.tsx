@@ -5,20 +5,20 @@ import { addExercise } from '../../lib/database';
 
 export default function NewExerciseScreen() {
   const {
-    sessionId, machineType, machineImagePath, machineConfidence,
+    sessionId, city,
+    machineId, machineType, machineImagePath, machineConfidence, muscleGroup,
     weightKg, weightImagePath, weightConfidence,
+    defaultSets, defaultReps,
   } = useLocalSearchParams<{
-    sessionId: string;
-    machineType?: string;
-    machineImagePath?: string;
-    machineConfidence?: string;
-    weightKg?: string;
-    weightImagePath?: string;
-    weightConfidence?: string;
+    sessionId: string; city?: string;
+    machineId?: string; machineType?: string; machineImagePath?: string;
+    machineConfidence?: string; muscleGroup?: string;
+    weightKg?: string; weightImagePath?: string; weightConfidence?: string;
+    defaultSets?: string; defaultReps?: string;
   }>();
 
-  const [sets, setSets]   = useState(3);
-  const [reps, setReps]   = useState(10);
+  const [sets, setSets]     = useState(Number(defaultSets) || 3);
+  const [reps, setReps]     = useState(Number(defaultReps) || 10);
   const [saving, setSaving] = useState(false);
 
   function save() {
@@ -26,10 +26,11 @@ export default function NewExerciseScreen() {
     setSaving(true);
     addExercise({
       session_id:         Number(sessionId),
+      machine_id:         machineId ? Number(machineId) : null,
       machine_type:       machineType,
       machine_confidence: machineConfidence ? Number(machineConfidence) : null,
       machine_image_path: machineImagePath ?? null,
-      muscle_groups:      null,
+      muscle_group:       muscleGroup ?? null,
       weight_kg:          Number(weightKg),
       weight_confidence:  weightConfidence ? Number(weightConfidence) : null,
       weight_image_path:  weightImagePath ?? null,
@@ -40,7 +41,9 @@ export default function NewExerciseScreen() {
     router.back();
   }
 
-  const canSave = !!machineType && !!weightKg;
+  const hasMachine = !!machineType;
+  const hasWeight  = !!weightKg;
+  const canSave    = hasMachine && hasWeight;
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 48 }}>
@@ -51,38 +54,59 @@ export default function NewExerciseScreen() {
         <Text style={s.title}>Ny övning</Text>
       </View>
 
-      <Text style={s.sectionLabel}>FOTOGRAFERA MASKINEN</Text>
-      <TouchableOpacity
-        style={[s.cameraCard, machineType ? s.captured : null]}
-        onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId } })}
-      >
-        {machineType ? (
+      {/* Maskin */}
+      <Text style={s.sectionLabel}>MASKIN</Text>
+      {!hasMachine ? (
+        <View style={s.choiceRow}>
+          <TouchableOpacity
+            style={s.choiceBtn}
+            onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '' } })}
+          >
+            <Text style={s.choiceIcon}>📋</Text>
+            <Text style={s.choiceBtnText}>Välj från register</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.choiceBtn, s.choiceBtnAccent]}
+            onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId, city: city ?? '' } })}
+          >
+            <Text style={s.choiceIcon}>📷</Text>
+            <Text style={[s.choiceBtnText, { color: '#fff' }]}>Skanna ny maskin</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={[s.cameraCard, s.captured]}
+          onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '' } })}
+        >
           <View style={s.aiResult}>
             <Text style={{ fontSize: 28 }}>🏋️</Text>
             <View>
-              <Text style={[s.aiLabel, { color: '#1ecfa4' }]}>AI-IDENTIFIERING</Text>
+              <Text style={[s.aiLabel, { color: '#1ecfa4' }]}>
+                {machineId ? 'FRÅN REGISTER' : 'AI-IDENTIFIERING'}
+              </Text>
               <Text style={s.aiValue}>{machineType}</Text>
-              <Text style={s.aiConf}>{machineConfidence}% · Tryck för att ändra</Text>
+              {muscleGroup ? <Text style={s.aiConf}>{muscleGroup} · Tryck för att ändra</Text>
+                           : <Text style={s.aiConf}>Tryck för att ändra</Text>}
             </View>
           </View>
-        ) : (
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 32, marginBottom: 8 }}>📷</Text>
-            <Text style={s.cameraText}>Ta foto på maskinen</Text>
-            <Text style={s.cameraHint}>AI identifierar maskintyp automatiskt</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+        </TouchableOpacity>
+      )}
 
-      <Text style={s.sectionLabel}>FOTOGRAFERA VIKTEN</Text>
+      {/* Vikt */}
+      <Text style={s.sectionLabel}>VIKT</Text>
       <TouchableOpacity
-        style={[s.cameraCard, weightKg ? s.capturedGold : null]}
+        style={[s.cameraCard, hasWeight ? s.capturedGold : null]}
         onPress={() => router.push({
           pathname: '/exercise/scan-weight',
-          params: { sessionId, machineType: machineType ?? '', machineImagePath: machineImagePath ?? '', machineConfidence: machineConfidence ?? '' },
+          params: {
+            sessionId, city: city ?? '',
+            machineId: machineId ?? '', machineType: machineType ?? '',
+            machineImagePath: machineImagePath ?? '', machineConfidence: machineConfidence ?? '',
+            muscleGroup: muscleGroup ?? '',
+          },
         })}
       >
-        {weightKg ? (
+        {hasWeight ? (
           <View style={s.aiResult}>
             <Text style={{ fontSize: 28 }}>⚖️</Text>
             <View>
@@ -100,6 +124,7 @@ export default function NewExerciseScreen() {
         )}
       </TouchableOpacity>
 
+      {/* Sets & Reps */}
       <Text style={s.sectionLabel}>SETS & REPS</Text>
       <View style={s.setsRow}>
         <View style={s.inputBlock}>
@@ -134,6 +159,11 @@ const s = StyleSheet.create({
   backText:        { color: '#dde3f0', fontSize: 17 },
   title:           { fontSize: 22, fontWeight: '700', color: '#dde3f0', letterSpacing: -0.4 },
   sectionLabel:    { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 16, marginBottom: 10 },
+  choiceRow:       { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 },
+  choiceBtn:       { flex: 1, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16, alignItems: 'center', gap: 8 },
+  choiceBtnAccent: { backgroundColor: '#f04a18', borderColor: '#f04a18' },
+  choiceIcon:      { fontSize: 24 },
+  choiceBtnText:   { fontSize: 13, fontWeight: '700', color: '#dde3f0', textAlign: 'center' },
   cameraCard:      { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderStyle: 'dashed', borderRadius: 14, padding: 28, alignItems: 'center' },
   captured:        { borderStyle: 'solid', borderColor: '#1ecfa4', backgroundColor: '#0d2520', padding: 16, alignItems: 'flex-start' },
   capturedGold:    { borderStyle: 'solid', borderColor: '#f5c842', backgroundColor: '#2a2208', padding: 16, alignItems: 'flex-start' },

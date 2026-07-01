@@ -8,8 +8,9 @@ type AIResult = { weight_kg: number; confidence: number; label: string };
 
 export default function ScanWeightScreen() {
   const params = useLocalSearchParams<{
-    sessionId: string; machineType?: string;
-    machineImagePath?: string; machineConfidence?: string;
+    sessionId: string; city?: string;
+    machineId?: string; machineType?: string;
+    machineImagePath?: string; machineConfidence?: string; muscleGroup?: string;
   }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning]   = useState(false);
@@ -23,13 +24,10 @@ export default function ScanWeightScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo) return;
-
       const dest = FileSystem.documentDirectory + `weight_${Date.now()}.jpg`;
       await FileSystem.moveAsync({ from: photo.uri, to: dest });
       setImagePath(dest);
-
-      const aiResult = await readWeight(photo.base64 ?? '');
-      setResult(aiResult);
+      setResult(await readWeight(photo.base64 ?? ''));
     } finally {
       setScanning(false);
     }
@@ -41,9 +39,12 @@ export default function ScanWeightScreen() {
       pathname: '/exercise/new',
       params: {
         sessionId:         params.sessionId,
+        city:              params.city ?? '',
+        machineId:         params.machineId ?? '',
         machineType:       params.machineType ?? '',
         machineImagePath:  params.machineImagePath ?? '',
         machineConfidence: params.machineConfidence ?? '',
+        muscleGroup:       params.muscleGroup ?? '',
         weightKg:          String(result.weight_kg),
         weightImagePath:   imagePath ?? '',
         weightConfidence:  String(result.confidence),
@@ -116,7 +117,6 @@ export default function ScanWeightScreen() {
   );
 }
 
-// Placeholder — kopplas till Claude Vision API i nästa steg
 async function readWeight(_base64: string): Promise<AIResult> {
   await new Promise(r => setTimeout(r, 1500));
   return { weight_kg: 80, confidence: 96, label: 'Viktstack · Pin-system' };
@@ -130,11 +130,11 @@ const s = StyleSheet.create({
   permText:        { color: '#dde3f0', fontSize: 16, textAlign: 'center', marginBottom: 24 },
   permBtn:         { backgroundColor: GOLD, borderRadius: 14, paddingHorizontal: 24, paddingVertical: 14 },
   permBtnText:     { color: '#000', fontWeight: '700', fontSize: 16 },
-  overlay:         { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
+  overlay:         { position: 'absolute', inset: 0 },
   corner:          { position: 'absolute', width: 30, height: 30, borderColor: GOLD, borderTopWidth: 3, borderLeftWidth: 3, top: '25%', left: '15%', borderRadius: 4 },
   cornerTR:        { left: undefined, right: '15%', borderLeftWidth: 0, borderRightWidth: 3 },
-  cornerBL:        { top: undefined, bottom: '25%', borderTopWidth: 0, borderBottomWidth: 3 },
-  cornerBR:        { top: undefined, bottom: '25%', left: undefined, right: '15%', borderTopWidth: 0, borderBottomWidth: 3, borderLeftWidth: 0, borderRightWidth: 3 },
+  cornerBL:        { top: undefined, bottom: '45%', borderTopWidth: 0, borderBottomWidth: 3 },
+  cornerBR:        { top: undefined, bottom: '45%', left: undefined, right: '15%', borderTopWidth: 0, borderBottomWidth: 3, borderLeftWidth: 0, borderRightWidth: 3 },
   topBar:          { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 24, paddingTop: 60 },
   closeBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   closeText:       { color: '#fff', fontSize: 16 },

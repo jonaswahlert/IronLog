@@ -1,23 +1,30 @@
-import { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Modal } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { getTodaySession, createSession, getExercisesForSession, Session, Exercise } from '../../lib/database';
 
 export default function SessionScreen() {
-  const [session, setSession]     = useState<Session | null>(null);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [session, setSession]       = useState<Session | null>(null);
+  const [exercises, setExercises]   = useState<Exercise[]>([]);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [city, setCity]             = useState('');
 
   useFocusEffect(useCallback(() => {
     const s = getTodaySession();
-    setSession(s ?? null);
-    if (s) setExercises(getExercisesForSession(s.id));
-    else   setExercises([]);
+    setSession(s);
+    setExercises(s ? getExercisesForSession(s.id) : []);
   }, []));
 
   function handleStart() {
-    const s = createSession();
+    setShowCityModal(true);
+  }
+
+  function confirmStart() {
+    const s = createSession(city.trim() || undefined);
     setSession(s);
     setExercises([]);
+    setShowCityModal(false);
+    setCity('');
   }
 
   const totalSets = exercises.reduce((sum, e) => sum + (e.sets ?? 0), 0);
@@ -26,73 +33,99 @@ export default function SessionScreen() {
     : 0;
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 32 }}>
-      <View style={s.header}>
-        <View style={s.chip}>
-          <Text style={s.chipDot}>●</Text>
-          <Text style={s.chipText}>
-            {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' })}
-          </Text>
+    <>
+      <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 32 }}>
+        <View style={s.header}>
+          <View style={s.chip}>
+            <Text style={s.chipDot}>●</Text>
+            <Text style={s.chipText}>
+              {new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' })}
+            </Text>
+          </View>
+          <Text style={s.title}>Träningspass</Text>
+          {session && (
+            <Text style={s.sub}>
+              Startade {new Date(session.started_at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+              {session.city ? `  ·  ${session.city}` : ''}
+            </Text>
+          )}
         </View>
-        <Text style={s.title}>Träningspass</Text>
+
         {session && (
-          <Text style={s.sub}>
-            Startade {new Date(session.started_at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          <View style={s.statsRow}>
+            <View style={s.statCard}>
+              <Text style={[s.statVal, { color: '#f04a18' }]}>{exercises.length}</Text>
+              <Text style={s.statLbl}>ÖVNINGAR</Text>
+            </View>
+            <View style={s.statCard}>
+              <Text style={s.statVal}>{totalSets}</Text>
+              <Text style={s.statLbl}>SET TOTALT</Text>
+            </View>
+            <View style={s.statCard}>
+              <Text style={[s.statVal, { color: '#1ecfa4' }]}>{elapsed}m</Text>
+              <Text style={s.statLbl}>TID</Text>
+            </View>
+          </View>
         )}
-      </View>
 
-      {session && (
-        <View style={s.statsRow}>
-          <View style={s.statCard}>
-            <Text style={[s.statVal, { color: '#f04a18' }]}>{exercises.length}</Text>
-            <Text style={s.statLbl}>ÖVNINGAR</Text>
-          </View>
-          <View style={s.statCard}>
-            <Text style={s.statVal}>{totalSets}</Text>
-            <Text style={s.statLbl}>SET TOTALT</Text>
-          </View>
-          <View style={s.statCard}>
-            <Text style={[s.statVal, { color: '#1ecfa4' }]}>{elapsed}m</Text>
-            <Text style={s.statLbl}>TID</Text>
+        {exercises.length > 0 && (
+          <>
+            <Text style={s.sectionLabel}>GENOMFÖRDA ÖVNINGAR</Text>
+            {exercises.map(ex => (
+              <View key={ex.id} style={s.exCard}>
+                <View style={s.exThumb}>
+                  <Text style={{ fontSize: 22 }}>🏋️</Text>
+                  <View style={s.aiBadge}><Text style={s.aiBadgeText}>AI</Text></View>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? 'Okänd maskin'}</Text>
+                  <Text style={s.exMeta}>{ex.sets} set · {ex.reps} reps{ex.muscle_group ? `  ·  ${ex.muscle_group}` : ''}</Text>
+                </View>
+                <View style={s.weightBadge}>
+                  <Text style={s.weightText}>{ex.weight_kg} kg</Text>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
+
+        {!session ? (
+          <TouchableOpacity style={s.addBtn} onPress={handleStart}>
+            <Text style={s.addBtnText}>Starta träningspass</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={s.addBtn}
+            onPress={() => router.push({ pathname: '/exercise/new', params: { sessionId: String(session.id), city: session.city ?? '' } })}
+          >
+            <Text style={s.addBtnText}>+ Lägg till övning</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+
+      {/* Stadsmodal */}
+      <Modal visible={showCityModal} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            <Text style={s.modalTitle}>Var tränar du idag?</Text>
+            <TextInput
+              style={s.input}
+              placeholder="Stad, t.ex. Stockholm"
+              placeholderTextColor="#7a85a0"
+              value={city}
+              onChangeText={setCity}
+              autoFocus
+            />
+            <TouchableOpacity style={s.modalBtn} onPress={confirmStart}>
+              <Text style={s.modalBtnText}>Starta pass</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.modalSkip} onPress={() => { setCity(''); confirmStart(); }}>
+              <Text style={s.modalSkipText}>Hoppa över</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      )}
-
-      {exercises.length > 0 && (
-        <>
-          <Text style={s.sectionLabel}>GENOMFÖRDA ÖVNINGAR</Text>
-          {exercises.map(ex => (
-            <View key={ex.id} style={s.exCard}>
-              <View style={s.exThumb}>
-                <Text style={{ fontSize: 22 }}>🏋️</Text>
-                <View style={s.aiBadge}><Text style={s.aiBadgeText}>AI</Text></View>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? 'Okänd maskin'}</Text>
-                <Text style={s.exMeta}>{ex.sets} set · {ex.reps} reps</Text>
-              </View>
-              <View style={s.weightBadge}>
-                <Text style={s.weightText}>{ex.weight_kg} kg</Text>
-              </View>
-            </View>
-          ))}
-        </>
-      )}
-
-      {!session ? (
-        <TouchableOpacity style={s.addBtn} onPress={handleStart}>
-          <Text style={s.addBtnText}>Starta träningspass</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={s.addBtn}
-          onPress={() => router.push({ pathname: '/exercise/new', params: { sessionId: String(session.id) } })}
-        >
-          <Text style={s.addBtnText}>+ Lägg till övning</Text>
-        </TouchableOpacity>
-      )}
-    </ScrollView>
+      </Modal>
+    </>
   );
 }
 
@@ -119,4 +152,12 @@ const s = StyleSheet.create({
   weightText:   { fontSize: 13, fontWeight: '800', color: '#f04a18' },
   addBtn:       { margin: 16, backgroundColor: '#f04a18', borderRadius: 14, padding: 16, alignItems: 'center' },
   addBtnText:   { color: '#fff', fontSize: 16, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalCard:    { backgroundColor: '#141720', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 48 },
+  modalTitle:   { fontSize: 22, fontWeight: '800', color: '#dde3f0', marginBottom: 20, letterSpacing: -0.4 },
+  input:        { backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16, fontSize: 17, color: '#dde3f0', marginBottom: 16 },
+  modalBtn:     { backgroundColor: '#f04a18', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 10 },
+  modalBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  modalSkip:    { alignItems: 'center', padding: 8 },
+  modalSkipText:{ color: '#7a85a0', fontSize: 14 },
 });
