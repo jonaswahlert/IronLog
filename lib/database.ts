@@ -9,6 +9,7 @@ export function initDatabase() {
       name         TEXT NOT NULL,
       image_path   TEXT,
       city         TEXT,
+      gym          TEXT,
       muscle_group TEXT,
       created_at   TEXT DEFAULT (datetime('now'))
     );
@@ -17,6 +18,7 @@ export function initDatabase() {
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       date       TEXT NOT NULL,
       city       TEXT,
+      gym        TEXT,
       started_at TEXT NOT NULL,
       ended_at   TEXT
     );
@@ -41,6 +43,8 @@ export function initDatabase() {
 
   // Migrationer för befintlig databas
   try { db.execSync(`ALTER TABLE sessions ADD COLUMN city TEXT`); } catch {}
+  try { db.execSync(`ALTER TABLE sessions ADD COLUMN gym TEXT`); } catch {}
+  try { db.execSync(`ALTER TABLE machines ADD COLUMN gym TEXT`); } catch {}
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN machine_id INTEGER REFERENCES machines(id)`); } catch {}
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN muscle_group TEXT`); } catch {}
 }
@@ -48,26 +52,27 @@ export function initDatabase() {
 // ── Machines ──────────────────────────────────────────────
 export function saveMachine(data: Omit<Machine, 'id' | 'created_at'>): Machine {
   const result = db.runSync(
-    `INSERT INTO machines (name, image_path, city, muscle_group) VALUES (?, ?, ?, ?)`,
-    [data.name, data.image_path ?? null, data.city ?? null, data.muscle_group ?? null]
+    `INSERT INTO machines (name, image_path, city, gym, muscle_group) VALUES (?, ?, ?, ?, ?)`,
+    [data.name, data.image_path ?? null, data.city ?? null, data.gym ?? null, data.muscle_group ?? null]
   );
   return db.getFirstSync<Machine>('SELECT * FROM machines WHERE id = ?', [result.lastInsertRowId])!;
 }
 
 export function getAllMachines(): Machine[] {
-  return db.getAllSync<Machine>('SELECT * FROM machines ORDER BY city, muscle_group, name');
-}
-
-export function getMachinesByCity(city: string): Machine[] {
-  return db.getAllSync<Machine>(
-    'SELECT * FROM machines WHERE city = ? ORDER BY muscle_group, name',
-    [city]
-  );
+  return db.getAllSync<Machine>('SELECT * FROM machines ORDER BY city, gym, muscle_group, name');
 }
 
 export function getCities(): string[] {
   const rows = db.getAllSync<{ city: string }>('SELECT DISTINCT city FROM machines WHERE city IS NOT NULL ORDER BY city');
   return rows.map(r => r.city);
+}
+
+export function getGymsForCity(city: string): string[] {
+  const rows = db.getAllSync<{ gym: string }>(
+    'SELECT DISTINCT gym FROM machines WHERE city = ? AND gym IS NOT NULL ORDER BY gym',
+    [city]
+  );
+  return rows.map(r => r.gym);
 }
 
 export function getLastExerciseForMachine(machineId: number): Exercise | null {
@@ -83,12 +88,12 @@ export function getTodaySession(): Session | null {
   return db.getFirstSync<Session>('SELECT * FROM sessions WHERE date = ?', [today]) ?? null;
 }
 
-export function createSession(city?: string): Session {
+export function createSession(city?: string, gym?: string): Session {
   const today = new Date().toISOString().split('T')[0];
   const now   = new Date().toISOString();
   const result = db.runSync(
-    'INSERT INTO sessions (date, city, started_at) VALUES (?, ?, ?)',
-    [today, city ?? null, now]
+    'INSERT INTO sessions (date, city, gym, started_at) VALUES (?, ?, ?, ?)',
+    [today, city ?? null, gym ?? null, now]
   );
   return db.getFirstSync<Session>('SELECT * FROM sessions WHERE id = ?', [result.lastInsertRowId])!;
 }
@@ -98,6 +103,14 @@ export function getLastCity(): string | null {
     'SELECT city FROM sessions WHERE city IS NOT NULL ORDER BY id DESC LIMIT 1'
   );
   return row?.city ?? null;
+}
+
+export function getLastGym(city: string): string | null {
+  const row = db.getFirstSync<{ gym: string }>(
+    'SELECT gym FROM sessions WHERE city = ? AND gym IS NOT NULL ORDER BY id DESC LIMIT 1',
+    [city]
+  );
+  return row?.gym ?? null;
 }
 
 export function getAllSessions(): Session[] {
@@ -141,6 +154,7 @@ export type Machine = {
   name: string;
   image_path: string | null;
   city: string | null;
+  gym: string | null;
   muscle_group: string | null;
   created_at: string;
 };
@@ -149,6 +163,7 @@ export type Session = {
   id: number;
   date: string;
   city: string | null;
+  gym: string | null;
   started_at: string;
   ended_at: string | null;
 };

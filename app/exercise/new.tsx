@@ -5,12 +5,12 @@ import { addExercise } from '../../lib/database';
 
 export default function NewExerciseScreen() {
   const {
-    sessionId, city,
+    sessionId, city, gym,
     machineId, machineType, machineImagePath, machineConfidence, muscleGroup,
     weightKg, weightImagePath, weightConfidence,
     defaultSets, defaultReps,
   } = useLocalSearchParams<{
-    sessionId: string; city?: string;
+    sessionId: string; city?: string; gym?: string;
     machineId?: string; machineType?: string; machineImagePath?: string;
     machineConfidence?: string; muscleGroup?: string;
     weightKg?: string; weightImagePath?: string; weightConfidence?: string;
@@ -60,14 +60,14 @@ export default function NewExerciseScreen() {
         <View style={s.choiceRow}>
           <TouchableOpacity
             style={s.choiceBtn}
-            onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '' } })}
+            onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '', gym: gym ?? '' } })}
           >
             <Text style={s.choiceIcon}>📋</Text>
             <Text style={s.choiceBtnText}>Välj från register</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.choiceBtn, s.choiceBtnAccent]}
-            onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId, city: city ?? '' } })}
+            onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId, city: city ?? '', gym: gym ?? '' } })}
           >
             <Text style={s.choiceIcon}>📷</Text>
             <Text style={[s.choiceBtnText, { color: '#fff' }]}>Skanna ny maskin</Text>
@@ -76,7 +76,7 @@ export default function NewExerciseScreen() {
       ) : (
         <TouchableOpacity
           style={[s.cameraCard, s.captured]}
-          onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '' } })}
+          onPress={() => router.push({ pathname: '/exercise/select-machine', params: { sessionId, city: city ?? '', gym: gym ?? '' } })}
         >
           <View style={s.aiResult}>
             <Text style={{ fontSize: 28 }}>🏋️</Text>
@@ -99,7 +99,7 @@ export default function NewExerciseScreen() {
         onPress={() => router.push({
           pathname: '/exercise/scan-weight',
           params: {
-            sessionId, city: city ?? '',
+            sessionId, city: city ?? '', gym: gym ?? '',
             machineId: machineId ?? '', machineType: machineType ?? '',
             machineImagePath: machineImagePath ?? '', machineConfidence: machineConfidence ?? '',
             muscleGroup: muscleGroup ?? '',

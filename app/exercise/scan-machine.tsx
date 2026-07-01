@@ -9,7 +9,7 @@ import { MUSCLE_GROUPS } from '../../lib/muscles';
 type AIResult = { machine_type: string; confidence: number; muscle_group: string };
 
 export default function ScanMachineScreen() {
-  const { sessionId, city } = useLocalSearchParams<{ sessionId: string; city?: string }>();
+  const { sessionId, city, gym } = useLocalSearchParams<{ sessionId: string; city?: string; gym?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning]         = useState(false);
   const [result, setResult]             = useState<AIResult | null>(null);
@@ -42,6 +42,7 @@ export default function ScanMachineScreen() {
       name:         machineName,
       image_path:   imagePath,
       city:         city || null,
+      gym:          gym || null,
       muscle_group: selectedGroup || null,
     });
     router.push({
@@ -49,6 +50,7 @@ export default function ScanMachineScreen() {
       params: {
         sessionId,
         city:              city ?? '',
+        gym:               gym ?? '',
         machineId:         String(machine.id),
         machineType:       machine.name,
         machineImagePath:  imagePath ?? '',

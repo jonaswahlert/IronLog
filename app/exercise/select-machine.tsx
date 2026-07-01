@@ -4,7 +4,7 @@ import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { getAllMachines, getCities, getLastExerciseForMachine, Machine } from '../../lib/database';
 
 export default function SelectMachineScreen() {
-  const { sessionId, city: sessionCity } = useLocalSearchParams<{ sessionId: string; city?: string }>();
+  const { sessionId, city: sessionCity, gym: sessionGym } = useLocalSearchParams<{ sessionId: string; city?: string; gym?: string }>();
   const [machines, setMachines]     = useState<Machine[]>([]);
   const [cities, setCities]         = useState<string[]>([]);
   const [activeCity, setActiveCity] = useState<string | null>(sessionCity || null);
@@ -21,6 +21,7 @@ export default function SelectMachineScreen() {
       params: {
         sessionId,
         city: sessionCity ?? '',
+        gym:  sessionGym  ?? '',
         machineId:         String(machine.id),
         machineType:       machine.name,
         machineImagePath:  machine.image_path ?? '',
@@ -105,7 +106,7 @@ export default function SelectMachineScreen() {
 
       <TouchableOpacity
         style={s.scanBtn}
-        onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId, city: sessionCity ?? '' } })}
+        onPress={() => router.push({ pathname: '/exercise/scan-machine', params: { sessionId, city: sessionCity ?? '', gym: sessionGym ?? '' } })}
       >
         <Text style={s.scanBtnText}>📷  Skanna ny maskin</Text>
       </TouchableOpacity>
