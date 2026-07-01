@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, Modal } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { getTodaySession, createSession, getExercisesForSession, Session, Exercise } from '../../lib/database';
+import { getTodaySession, createSession, getExercisesForSession, getLastCity, Session, Exercise } from '../../lib/database';
 
 export default function SessionScreen() {
   const [session, setSession]       = useState<Session | null>(null);
@@ -16,6 +16,7 @@ export default function SessionScreen() {
   }, []));
 
   function handleStart() {
+    setCity(getLastCity() ?? '');
     setShowCityModal(true);
   }
 

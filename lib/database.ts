@@ -93,6 +93,13 @@ export function createSession(city?: string): Session {
   return db.getFirstSync<Session>('SELECT * FROM sessions WHERE id = ?', [result.lastInsertRowId])!;
 }
 
+export function getLastCity(): string | null {
+  const row = db.getFirstSync<{ city: string }>(
+    'SELECT city FROM sessions WHERE city IS NOT NULL ORDER BY id DESC LIMIT 1'
+  );
+  return row?.city ?? null;
+}
+
 export function getAllSessions(): Session[] {
   return db.getAllSync<Session>('SELECT * FROM sessions ORDER BY date DESC LIMIT 50');
 }
