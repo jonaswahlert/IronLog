@@ -1,54 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { router } from 'expo-router';
-import { supabase } from '../../lib/supabase';
-
-type Exercise = {
-  id: string;
-  machine_type: string;
-  weight_kg: number;
-  sets: number;
-  reps: number;
-};
-
-type Session = {
-  id: string;
-  date: string;
-  gym_name: string | null;
-  started_at: string;
-  exercises: Exercise[];
-};
+import { router, useFocusEffect } from 'expo-router';
+import { getTodaySession, createSession, getExercisesForSession, Session, Exercise } from '../../lib/database';
 
 export default function SessionScreen() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession]     = useState<Session | null>(null);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
 
-  useEffect(() => {
-    loadTodaySession();
-  }, []);
+  useFocusEffect(useCallback(() => {
+    const s = getTodaySession();
+    setSession(s ?? null);
+    if (s) setExercises(getExercisesForSession(s.id));
+    else   setExercises([]);
+  }, []));
 
-  async function loadTodaySession() {
-    const today = new Date().toISOString().split('T')[0];
-    const { data } = await supabase
-      .from('sessions')
-      .select('*, exercises(*)')
-      .eq('date', today)
-      .maybeSingle();
-    setSession(data);
+  function handleStart() {
+    const s = createSession();
+    setSession(s);
+    setExercises([]);
   }
 
-  async function startSession() {
-    const today = new Date().toISOString().split('T')[0];
-    const { data } = await supabase
-      .from('sessions')
-      .insert({ date: today, started_at: new Date().toISOString() })
-      .select()
-      .single();
-    if (data) setSession({ ...data, exercises: [] });
-  }
-
-  const exercises: Exercise[] = session?.exercises ?? [];
-  const totalSets = exercises.reduce((s, e) => s + (e.sets ?? 0), 0);
-  const elapsed = session
+  const totalSets = exercises.reduce((sum, e) => sum + (e.sets ?? 0), 0);
+  const elapsed   = session
     ? Math.floor((Date.now() - new Date(session.started_at).getTime()) / 60000)
     : 0;
 
@@ -62,7 +35,11 @@ export default function SessionScreen() {
           </Text>
         </View>
         <Text style={s.title}>Träningspass</Text>
-        {session && <Text style={s.sub}>Startade {new Date(session.started_at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}</Text>}
+        {session && (
+          <Text style={s.sub}>
+            Startade {new Date(session.started_at).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        )}
       </View>
 
       {session && (
@@ -92,7 +69,7 @@ export default function SessionScreen() {
                 <View style={s.aiBadge}><Text style={s.aiBadgeText}>AI</Text></View>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={s.exName}>{ex.machine_type ?? 'Okänd maskin'}</Text>
+                <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? 'Okänd maskin'}</Text>
                 <Text style={s.exMeta}>{ex.sets} set · {ex.reps} reps</Text>
               </View>
               <View style={s.weightBadge}>
@@ -104,11 +81,14 @@ export default function SessionScreen() {
       )}
 
       {!session ? (
-        <TouchableOpacity style={s.addBtn} onPress={startSession}>
+        <TouchableOpacity style={s.addBtn} onPress={handleStart}>
           <Text style={s.addBtnText}>Starta träningspass</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity style={s.addBtn} onPress={() => router.push({ pathname: '/exercise/new', params: { sessionId: session.id } })}>
+        <TouchableOpacity
+          style={s.addBtn}
+          onPress={() => router.push({ pathname: '/exercise/new', params: { sessionId: String(session.id) } })}
+        >
           <Text style={s.addBtnText}>+ Lägg till övning</Text>
         </TouchableOpacity>
       )}

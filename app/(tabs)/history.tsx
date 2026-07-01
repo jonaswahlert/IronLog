@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { supabase } from '../../lib/supabase';
-
-type Session = { id: string; date: string; gym_name: string | null; exercises: { id: string }[] };
+import { useFocusEffect } from 'expo-router';
+import { getAllSessions, getExercisesForSession, Session } from '../../lib/database';
 
 export default function HistoryScreen() {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<(Session & { count: number })[]>([]);
 
-  useEffect(() => {
-    supabase
-      .from('sessions')
-      .select('*, exercises(id)')
-      .order('date', { ascending: false })
-      .limit(20)
-      .then(({ data }) => setSessions(data ?? []));
-  }, []);
+  useFocusEffect(useCallback(() => {
+    const all = getAllSessions().map(s => ({
+      ...s,
+      count: getExercisesForSession(s.id).length,
+    }));
+    setSessions(all);
+  }, []));
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -22,8 +20,10 @@ export default function HistoryScreen() {
       {sessions.length === 0 && <Text style={s.empty}>Inga träningspass ännu.</Text>}
       {sessions.map(session => (
         <View key={session.id} style={s.card}>
-          <Text style={s.date}>{new Date(session.date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}</Text>
-          <Text style={s.count}>{session.exercises.length} övningar</Text>
+          <Text style={s.date}>
+            {new Date(session.date).toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+          <Text style={s.count}>{session.count} övningar</Text>
           {session.gym_name && <Text style={s.gym}>{session.gym_name}</Text>}
         </View>
       ))}

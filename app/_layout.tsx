@@ -1,7 +1,13 @@
+import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { initDatabase } from '../lib/database';
 
 export default function RootLayout() {
+  useEffect(() => {
+    initDatabase();
+  }, []);
+
   return (
     <>
       <StatusBar style="light" />
