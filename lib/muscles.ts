@@ -5,8 +5,8 @@ export const MUSCLE_GROUPS = [
   'Biceps',
   'Triceps',
   'Ben',
-  'Mage',
   'Rumpa',
-  'Vader',
-  'Helkropp',
+  'Mage',
+  'Cardio',
+  'Övrigt',
 ];

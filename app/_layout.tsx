@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { initDatabase } from '../lib/database';
+import { LanguageProvider } from '../lib/LanguageContext';
 
 export default function RootLayout() {
   useEffect(() => {
@@ -9,7 +10,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <LanguageProvider>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0b0d13' } }}>
         <Stack.Screen name="(tabs)" />
@@ -17,7 +18,8 @@ export default function RootLayout() {
         <Stack.Screen name="exercise/select-machine" options={{ presentation: 'modal' }} />
         <Stack.Screen name="exercise/scan-machine" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="exercise/scan-weight" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="session/[id]" options={{ presentation: 'modal' }} />
       </Stack>
-    </>
+    </LanguageProvider>
   );
 }

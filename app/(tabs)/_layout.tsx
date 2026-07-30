@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
+import { useTranslation } from '../../lib/i18n';
 
 const ACCENT = '#f04a18';
 const MUTED  = '#7a85a0';
@@ -7,6 +8,7 @@ const BG     = '#141720';
 const BORDER = '#22273a';
 
 export default function TabLayout() {
+  const t = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -19,19 +21,23 @@ export default function TabLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{ title: 'Pass', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏃</Text> }}
+        options={{ title: t('tab_session'), tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏃</Text> }}
       />
       <Tabs.Screen
         name="machines"
-        options={{ title: 'Maskiner', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏋️</Text> }}
+        options={{ title: t('tab_machines'), tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🏋️</Text> }}
       />
       <Tabs.Screen
         name="history"
-        options={{ title: 'Historik', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text> }}
+        options={{ title: t('tab_history'), tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📊</Text> }}
+      />
+      <Tabs.Screen
+        name="program"
+        options={{ title: t('tab_program'), tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📋</Text> }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ title: 'Profil', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👤</Text> }}
+        options={{ title: t('tab_profile'), tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>👤</Text> }}
       />
     </Tabs>
   );
