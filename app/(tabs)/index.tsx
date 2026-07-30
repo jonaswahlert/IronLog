@@ -19,9 +19,10 @@ import { MUSCLE_GROUPS } from '../../lib/muscles';
 
 const GUIDE = {
   sv: {
-    tabBasics:  'Grunderna',
-    tabMuscles: 'Muskelgrupper',
-    tabApp:     'Appen',
+    tabBasics:      'Grunderna',
+    tabMuscles:     'Muskelgrupper',
+    tabApp:         'Appen',
+    tabSupplements: 'Kosttillskott',
     basics: [
       { icon: '🔁', h: 'Set & reps',   p: '3 rundor av 10 armhävningar = 3 set × 10 reps.' },
       { icon: '⚖️', h: 'Hur tungt?',   p: 'Sista repet ska vara svårt men genomförbart.' },
@@ -29,10 +30,26 @@ const GUIDE = {
       { icon: '💨', h: 'Andas rätt',   p: 'Andas ut vid ansträngning, in vid vila.' },
     ],
     groups: [
-      { color: '#f04a18', name: 'Tryckmuskler', sub: 'Träna ihop', muscles: 'Bröst  ·  Axlar  ·  Baksida arm' },
-      { color: '#1ecfa4', name: 'Dragmuskler',  sub: 'Träna ihop', muscles: 'Rygg  ·  Framsida arm' },
-      { color: '#4a8af0', name: 'Ben & rumpa',  sub: 'Eget pass',  muscles: 'Lår  ·  Rumpa  ·  Mage' },
-      { color: '#a04af0', name: 'Kondition',    sub: 'När som',    muscles: 'Löpband  ·  Cykel  ·  Crosstrainer' },
+      {
+        color: '#f04a18', name: 'Tryckmuskler', sub: 'Träna ihop', muscles: 'Bröst  ·  Axlar  ·  Baksida arm',
+        detail: 'Dessa tre muskelgrupper jobbar tillsammans i nästan alla tryckrörelser — när du trycker något ifrån dig (bänkpress, axelpress, dips) används bröst, axlar och baksida arm samtidigt. Genom att träna dem samma pass belastar du samma rörelsemönster en gång, och kan sedan vila dem tillsammans till nästa gång — istället för att träna samma muskler flera dagar i rad utan återhämtning.\n\nNybörjartips: börja med den största muskelgruppen (bröst) innan du går vidare till mindre (axlar, triceps), annars orkar du inte lika mycket på de stora övningarna. 2–3 övningar räcker för ett bra pass i början.',
+        rest: '48–72 timmars vila rekommenderas innan du tränar tryckmuskler igen med tung belastning. Bröst är störst av de tre och styr återhämtningstiden — vänta gärna tills eventuell träningsvärk lagt sig. Axlar och triceps jobbar redan indirekt vid bröstövningar och behöver i praktiken samma vila.',
+      },
+      {
+        color: '#1ecfa4', name: 'Dragmuskler',  sub: 'Träna ihop', muscles: 'Rygg  ·  Framsida arm',
+        detail: 'Dragmuskler aktiveras i alla rörelser där du drar något mot kroppen — rodd, latsdrag, pull-ups. Rygg och biceps jobbar alltid tillsammans i dessa övningar, så det är naturligt att träna dem ihop. Att separera tryck- och dragövningar till olika pass gör att du kan träna oftare utan att muskelgrupperna är för trötta.\n\nNybörjartips: fokusera på att dra med ryggen, inte bara armarna — tänk "för armbågarna bakåt" snarare än "böj armen". Det ger bättre resultat och minskar risken för att bara bicepsen tar all belastning.',
+        rest: '48–72 timmars vila rekommenderas innan nästa tunga dragpass. Ryggen är en stor muskelgrupp som styr återhämtningstiden. Biceps belastas indirekt vid ryggövningar och behöver därför i praktiken samma vila, även om den isolerad återhämtar sig något snabbare.',
+      },
+      {
+        color: '#4a8af0', name: 'Ben & rumpa',  sub: 'Eget pass',  muscles: 'Lår  ·  Rumpa  ·  Mage',
+        detail: 'Benen är kroppens största muskelgrupp och förtjänar ofta ett eget pass, eftersom övningar som benpress och utfall är krävande för hela kroppen — inklusive magen/core, som jobbar som stabilisator i nästan alla benövningar. Att blanda in ett tungt benpass med tryck eller drag blir oftast för mycket på en gång för de flesta nybörjare.\n\nNybörjartips: många hoppar över benpass för att det är jobbigare — men starka ben ger bättre balans i hela kroppen och förebygger skador. Börja lugnt med lägre vikt och fokusera på tekniken innan du lastar på.',
+        rest: 'Ofta den muskelgrupp som behöver längst vila — räkna med 48–72 timmar, ibland upp till 3 dygn efter ett tungt benpass som nybörjare. Vänta gärna tills eventuell träningsvärk i lår/rumpa lagt sig innan du kör hårt igen.',
+      },
+      {
+        color: '#a04af0', name: 'Kondition',    sub: 'När som',    muscles: 'Löpband  ·  Cykel  ·  Crosstrainer',
+        detail: 'Konditionsträning belastar hjärta och lungor snarare än specifika muskler, så den kan i princip läggas in när som helst — före, efter eller på en helt egen dag. Många nybörjare kombinerar ett kort konditionspass (10–20 min) i slutet av ett styrkepass.\n\nNybörjartips: kör inte hård kondition direkt före tunga styrkeövningar — det tröttar ut kroppen och du orkar lyfta mindre. Lägg konditionen sist i passet, eller på en separat dag om målet är muskeltillväxt.',
+        rest: 'Inget specifikt muskelbehov av vila som vid styrketräning, men undvik hög intensitet flera dagar i rad — hjärta, leder och nervsystem behöver återhämtning också. Växla gärna med lugnare pass eller en vilodag, särskilt samma vecka som du styrketränar tungt.',
+      },
     ],
     appSteps: [
       { step: '1', h: 'Starta pass',      p: 'Tryck "Starta träningspass" och ange stad och gym.' },
@@ -41,11 +58,19 @@ const GUIDE = {
       { step: '4', h: 'Spara övning',     p: 'Kontrollera set/reps och tryck Spara. Upprepa för varje maskin.' },
       { step: '5', h: 'Avsluta',          p: 'Tryck "Avsluta pass" när träningen är klar.' },
     ],
+    supplements: [
+      { icon: '🥛', h: 'Protein',  p: 'Byggstenen för muskelåterhämtning och -tillväxt. Om du har svårt att nå ditt dagliga proteinbehov via vanlig mat kan ett proteinpulver (vassle eller växtbaserat) vara ett enkelt sätt att täcka mellanskillnaden. Total mängd protein per dag är viktigare än exakt timing runt träningspasset.' },
+      { icon: '⚡', h: 'Kreatin',  p: 'Ett av de mest välstuderade och beprövade tillskotten som finns. Kreatinmonohydrat kan ge några procents extra styrka och uthållighet vid tunga, korta ansträngningar (knäböj, bänkpress, marklyft). Rekommenderad dos är 3–5 g per dag — när på dygnet spelar ingen roll, effekten byggs upp över några veckor.' },
+      { icon: '☕', h: 'Koffein',  p: 'Ett av de mest beprövade sätten att prestera lite bättre, särskilt vid kondition och långa pass. Tas gärna 30–60 minuter innan träning, t.ex. som kaffe eller ett förträningstillskott. Var försiktig med mängden sent på dagen om det stör sömnen.' },
+      { icon: '🍊', h: 'Övrigt (omega-3, vitamin D)', p: 'Kan vara relevanta om du äter lite fisk eller får lite sol, men påverkar inte prestationen direkt på samma sätt som protein och kreatin — se dem mer som allmänt hälsostöd.' },
+      { icon: '⚠️', h: 'Kom ihåg', p: 'Tillskott ersätter aldrig bra kost, sömn och ett bra träningsupplägg — se dem som ett komplement, inte en genväg. Rådgör med läkare om du är osäker, gravid, sjuk eller tar andra mediciner.' },
+    ],
   },
   en: {
-    tabBasics:  'The basics',
-    tabMuscles: 'Muscle groups',
-    tabApp:     'How to use',
+    tabBasics:      'The basics',
+    tabMuscles:     'Muscle groups',
+    tabApp:         'How to use',
+    tabSupplements: 'Supplements',
     basics: [
       { icon: '🔁', h: 'Sets & reps',    p: '3 rounds of 10 push-ups = 3 sets × 10 reps.' },
       { icon: '⚖️', h: 'How heavy?',     p: 'Last rep should be hard but doable.' },
@@ -53,10 +78,26 @@ const GUIDE = {
       { icon: '💨', h: 'Breathe right',  p: 'Breathe out on effort, in on rest.' },
     ],
     groups: [
-      { color: '#f04a18', name: 'Push muscles', sub: 'Train together', muscles: 'Chest  ·  Shoulders  ·  Triceps' },
-      { color: '#1ecfa4', name: 'Pull muscles', sub: 'Train together', muscles: 'Back  ·  Biceps' },
-      { color: '#4a8af0', name: 'Legs & glutes',sub: 'Own session',    muscles: 'Thighs  ·  Glutes  ·  Core' },
-      { color: '#a04af0', name: 'Cardio',        sub: 'Anytime',       muscles: 'Treadmill  ·  Bike  ·  Cross trainer' },
+      {
+        color: '#f04a18', name: 'Push muscles', sub: 'Train together', muscles: 'Chest  ·  Shoulders  ·  Triceps',
+        detail: 'These three muscle groups work together in almost every pushing movement — bench press, shoulder press, dips all use chest, shoulders and triceps at the same time. Training them in the same session loads this movement pattern once, then lets you rest it together until next time, instead of hitting the same muscles several days in a row without recovery.\n\nBeginner tip: start with the biggest muscle group (chest) before moving to smaller ones (shoulders, triceps) — otherwise you won\'t have energy left for the big lifts. 2–3 exercises is plenty for a good beginner session.',
+        rest: 'Rest 48–72 hours before training push muscles hard again. Chest is the largest of the three and sets the pace — wait until any soreness has eased. Shoulders and triceps are already worked indirectly during chest exercises, so they need roughly the same rest in practice.',
+      },
+      {
+        color: '#1ecfa4', name: 'Pull muscles', sub: 'Train together', muscles: 'Back  ·  Biceps',
+        detail: 'Pull muscles are activated in every movement where you pull something toward your body — rows, lat pulldowns, pull-ups. Back and biceps always work together in these exercises, so it\'s natural to train them together. Separating push and pull days lets you train more often without the same muscles being too fatigued.\n\nBeginner tip: focus on pulling with your back, not just your arms — think "elbows back" rather than "bend the arm". This gives better results and stops your biceps from taking all the load.',
+        rest: 'Rest 48–72 hours before your next heavy pull session. Back is a large muscle group that determines recovery time. Biceps are worked indirectly during back exercises, so they need about the same rest even though they recover slightly faster in isolation.',
+      },
+      {
+        color: '#4a8af0', name: 'Legs & glutes',sub: 'Own session',    muscles: 'Thighs  ·  Glutes  ·  Core',
+        detail: 'Legs are the body\'s largest muscle group and often deserve their own session, since exercises like leg press and lunges are demanding for the whole body — including the core, which stabilizes almost every leg exercise. Combining a heavy leg day with push or pull exercises is usually too much for most beginners in one session.\n\nBeginner tip: many skip leg day because it\'s tougher — but strong legs improve balance throughout the body and help prevent injuries. Start light and focus on technique before adding weight.',
+        rest: 'Usually the muscle group that needs the longest rest — plan for 48–72 hours, sometimes up to 3 days after a heavy leg session as a beginner. Wait until any soreness in thighs/glutes has eased before training hard again.',
+      },
+      {
+        color: '#a04af0', name: 'Cardio',        sub: 'Anytime',       muscles: 'Treadmill  ·  Bike  ·  Cross trainer',
+        detail: 'Cardio trains your heart and lungs rather than specific muscles, so it can be added almost anywhere — before, after, or on its own day. Many beginners add a short cardio session (10–20 min) at the end of a strength workout.\n\nBeginner tip: don\'t do hard cardio right before heavy strength exercises — it tires out your body and you\'ll lift less. Put cardio at the end of the session, or on a separate day if your main goal is muscle growth.',
+        rest: 'No muscle-specific rest requirement like strength training, but avoid high intensity several days in a row — heart, joints and nervous system need recovery too. Mix in easier sessions or a rest day, especially in weeks when you\'re also strength training hard.',
+      },
     ],
     appSteps: [
       { step: '1', h: 'Start session',    p: 'Tap "Start training session" and enter city and gym.' },
@@ -64,6 +105,13 @@ const GUIDE = {
       { step: '3', h: 'Log weight',       p: 'Photograph the weight plate or enter kg manually.' },
       { step: '4', h: 'Save exercise',    p: 'Check sets/reps and tap Save. Repeat for each machine.' },
       { step: '5', h: 'Finish',           p: 'Tap "End session" when you are done training.' },
+    ],
+    supplements: [
+      { icon: '🥛', h: 'Protein',  p: 'The building block for muscle recovery and growth. If it\'s hard to hit your daily protein target from regular food, a protein powder (whey or plant-based) is an easy way to cover the gap. Total daily protein matters more than exact timing around your workout.' },
+      { icon: '⚡', h: 'Creatine', p: 'One of the most studied and proven supplements out there. Creatine monohydrate can add a few percent extra strength and endurance on heavy, short efforts (squats, bench press, deadlifts). Recommended dose is 3–5 g per day — timing doesn\'t matter, the effect builds up over a few weeks.' },
+      { icon: '☕', h: 'Caffeine', p: 'One of the most proven ways to perform a little better, especially for cardio and longer sessions. Best taken 30–60 minutes before training, e.g. as coffee or a pre-workout. Watch the amount late in the day if it affects your sleep.' },
+      { icon: '🍊', h: 'Others (omega-3, vitamin D)', p: 'Can be relevant if you eat little fish or get little sun, but they don\'t directly affect performance the way protein and creatine do — think of them more as general health support.' },
+      { icon: '⚠️', h: 'Keep in mind', p: 'Supplements never replace good food, sleep and a solid training plan — think of them as a complement, not a shortcut. Talk to a doctor if you\'re unsure, pregnant, ill, or taking other medication.' },
     ],
   },
 } as const;
@@ -73,11 +121,12 @@ const BG_IMAGE = require('../../assets/hero-bg.jpg');
 export default function SessionScreen() {
   const t = useTranslation();
   const { lang } = useLang();
-  const [guideTab, setGuideTab]           = useState<'basics' | 'muscles' | 'app'>('app');
+  const [guideTab, setGuideTab]           = useState<'basics' | 'muscles' | 'app' | 'supplements'>('app');
   const [guideOpen, setGuideOpen]         = useState(false);
   const [savedProgram, setSavedProgram]   = useState<ProgramDay[] | null>(null);
   const [activeProgName, setActiveProgName] = useState<string | null>(null);
   const [programDayModal, setProgramDayModal] = useState<ProgramDay | null>(null);
+  const [muscleDetailIdx, setMuscleDetailIdx] = useState<number | null>(null);
   const [showSessionPicker, setShowSessionPicker] = useState(false);
   const [session, setSession]             = useState<Session | null>(null);
   const [exercises, setExercises]         = useState<Exercise[]>([]);
@@ -310,6 +359,14 @@ export default function SessionScreen() {
                   {GUIDE[lang].tabMuscles}
                 </Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.guideTabBtn, guideTab === 'supplements' && s.guideTabBtnActive]}
+                onPress={() => setGuideTab('supplements')}
+              >
+                <Text style={[s.guideTabText, guideTab === 'supplements' && s.guideTabTextActive]}>
+                  {GUIDE[lang].tabSupplements}
+                </Text>
+              </TouchableOpacity>
             </View>
             {guideTab === 'app' ? (
               <View style={s.groupList}>
@@ -335,10 +392,10 @@ export default function SessionScreen() {
                   </View>
                 ))}
               </View>
-            ) : (
+            ) : guideTab === 'muscles' ? (
               <View style={s.groupList}>
                 {GUIDE[lang].groups.map((g, i) => (
-                  <View key={i} style={s.groupRow}>
+                  <TouchableOpacity key={i} style={s.groupRow} onPress={() => setMuscleDetailIdx(i)}>
                     <View style={[s.groupDot, { backgroundColor: g.color }]} />
                     <View style={{ flex: 1 }}>
                       <View style={s.groupNameRow}>
@@ -348,6 +405,19 @@ export default function SessionScreen() {
                         </View>
                       </View>
                       <Text style={s.groupMuscles}>{g.muscles}</Text>
+                    </View>
+                    <Text style={s.groupArrow}>›</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <View style={s.groupList}>
+                {GUIDE[lang].supplements.map((sup, i) => (
+                  <View key={i} style={s.groupRow}>
+                    <Text style={s.supplementIcon}>{sup.icon}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.groupName}>{sup.h}</Text>
+                      <Text style={s.groupMuscles}>{sup.p}</Text>
                     </View>
                   </View>
                 ))}
@@ -470,6 +540,33 @@ export default function SessionScreen() {
             </TouchableOpacity>
             <TouchableOpacity style={s.modalSkip} onPress={() => setProgramDayModal(null)}>
               <Text style={s.modalSkipText}>{lang === 'sv' ? 'Avbryt' : 'Cancel'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Muscle group detail modal */}
+      <Modal visible={muscleDetailIdx !== null} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={s.modalCard}>
+            {muscleDetailIdx !== null && (
+              <>
+                <View style={s.groupNameRow}>
+                  <View style={[s.groupDot, { backgroundColor: GUIDE[lang].groups[muscleDetailIdx].color }]} />
+                  <Text style={[s.progDayType, { flex: 1, marginBottom: 0 }]}>{GUIDE[lang].groups[muscleDetailIdx].name}</Text>
+                </View>
+                <Text style={[s.progDayMuscles, { marginBottom: 16 }]}>{GUIDE[lang].groups[muscleDetailIdx].muscles}</Text>
+                <ScrollView style={{ maxHeight: 380 }}>
+                  <Text style={s.muscleDetailText}>{GUIDE[lang].groups[muscleDetailIdx].detail}</Text>
+                  <View style={s.restBox}>
+                    <Text style={s.restLabel}>🛌  {lang === 'sv' ? 'VILA & ÅTERHÄMTNING' : 'REST & RECOVERY'}</Text>
+                    <Text style={s.muscleDetailText}>{GUIDE[lang].groups[muscleDetailIdx].rest}</Text>
+                  </View>
+                </ScrollView>
+              </>
+            )}
+            <TouchableOpacity style={s.modalSkip} onPress={() => setMuscleDetailIdx(null)}>
+              <Text style={s.modalSkipText}>{lang === 'sv' ? 'Stäng' : 'Close'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -693,6 +790,11 @@ const s = StyleSheet.create({
   groupSubBadge:     { borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },
   groupSubText:      { fontSize: 10, fontWeight: '700', letterSpacing: 0.3 },
   groupMuscles:      { fontSize: 12, color: '#7a85a0', lineHeight: 18 },
+  groupArrow:        { fontSize: 20, color: '#7a85a0', marginTop: 2, flexShrink: 0 },
+  supplementIcon:    { fontSize: 22, marginTop: 2, flexShrink: 0 },
+  muscleDetailText:  { fontSize: 14, color: '#c3c9db', lineHeight: 22 },
+  restBox:           { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#22273a' },
+  restLabel:         { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#1ecfa4', marginBottom: 8 },
   appStepNum:        { width: 26, height: 26, borderRadius: 13, backgroundColor: '#f04a18', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 },
   appStepNumText:    { color: '#fff', fontSize: 12, fontWeight: '800' },
 });

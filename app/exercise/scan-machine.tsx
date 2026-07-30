@@ -9,7 +9,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { saveMachine, machineExists } from '../../lib/database';
 import { MUSCLE_GROUPS } from '../../lib/muscles';
 import { useTranslation } from '../../lib/i18n';
-import { identifyMachine } from '../../lib/claude';
+import { identifyMachine, readNameplateText } from '../../lib/claude';
 
 type Step = 'machine' | 'nameplate' | 'result';
 
@@ -53,14 +53,19 @@ export default function ScanMachineScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo) return;
-      const ai = await identifyMachine(photo.base64 ?? '');
-      if (ai.machine_type) {
-        setMachineName(ai.machine_type);
-        setSelectedGroup(ai.muscle_group ?? '');
-        setConfidence(ai.confidence ?? 0);
+      const ai = await readNameplateText(photo.base64 ?? '');
+      if (ai.text) {
+        setMachineName(ai.text);
+        setConfidence(100);
+      } else {
+        Alert.alert(
+          'Kunde inte läsa skylten',
+          ai.error ? `Försök igen eller ange namnet manuellt. (${ai.error})` : 'Ingen läsbar text hittades på bilden. Försök igen eller ange namnet manuellt.',
+          [{ text: 'OK' }]
+        );
       }
     } catch {
-      // Behåll namnet från maskinbilden om skylten inte kunde identifieras
+      Alert.alert('Kunde inte läsa skylten', 'Försök igen eller ange namnet manuellt.', [{ text: 'OK' }]);
     } finally {
       setCapturing(false);
       setStep('result');
@@ -71,34 +76,42 @@ export default function ScanMachineScreen() {
     if (!machineName.trim()) return;
     const cityVal = city || null;
     const gymVal  = gym  || null;
+
+    const doSave = () => {
+      const machine = saveMachine({
+        name:         machineName.trim(),
+        image_path:   machineImagePath,
+        city:         cityVal,
+        gym:          gymVal,
+        muscle_group: selectedGroup || null,
+      });
+      router.push({
+        pathname: '/exercise/scan-weight',
+        params: {
+          sessionId,
+          city:              city ?? '',
+          gym:               gym ?? '',
+          machineId:         String(machine.id),
+          machineType:       machine.name,
+          machineImagePath:  machineImagePath ?? '',
+          machineConfidence: String(confidence),
+          muscleGroup:       selectedGroup,
+        },
+      });
+    };
+
     if (machineExists(machineName.trim(), cityVal, gymVal)) {
       Alert.alert(
         'Maskin finns redan',
-        `"${machineName.trim()}" är redan registrerad${cityVal ? ` på ${[gymVal, cityVal].filter(Boolean).join(', ')}` : ''}.`,
-        [{ text: 'OK' }]
+        `"${machineName.trim()}" är redan registrerad${cityVal ? ` på ${[gymVal, cityVal].filter(Boolean).join(', ')}` : ''}. Är det en annan övning på samma maskin? Då kan du spara den som en till variant — fotot hjälper dig skilja dem åt i listan.`,
+        [
+          { text: 'Avbryt', style: 'cancel' },
+          { text: 'Spara ändå', onPress: doSave },
+        ]
       );
       return;
     }
-    const machine = saveMachine({
-      name:         machineName.trim(),
-      image_path:   machineImagePath,
-      city:         cityVal,
-      gym:          gymVal,
-      muscle_group: selectedGroup || null,
-    });
-    router.push({
-      pathname: '/exercise/scan-weight',
-      params: {
-        sessionId,
-        city:              city ?? '',
-        gym:               gym ?? '',
-        machineId:         String(machine.id),
-        machineType:       machine.name,
-        machineImagePath:  machineImagePath ?? '',
-        machineConfidence: String(confidence),
-        muscleGroup:       selectedGroup,
-      },
-    });
+    doSave();
   }
 
   function skipToNew() {

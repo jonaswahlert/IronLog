@@ -36,7 +36,14 @@
     "plugins": [
       "expo-router",
       "expo-camera",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "IronLog läser bilder från ditt bibliotek.",
+          "cameraPermission": "IronLog använder kameran för att fotografera maskiner, vikter och profil-/progressbilder."
+        }
+      ]
     ],
     "extra": {
       "router": {

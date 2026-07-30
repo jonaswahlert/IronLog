@@ -8,7 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { router } from 'expo-router';
 import { saveMachine, machineExists, getLastCity, getLastGym } from '../lib/database';
 import { MUSCLE_GROUPS } from '../lib/muscles';
-import { identifyMachine } from '../lib/claude';
+import { identifyMachine, readNameplateText } from '../lib/claude';
 import { GYM_CHAINS } from '../lib/gyms';
 
 export default function GymScanScreen() {
@@ -59,14 +59,19 @@ export default function GymScanScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo) return;
-      const ai = await identifyMachine(photo.base64 ?? '');
-      setMachineName(ai.machine_type ?? '');
-      setMuscleGroup(ai.muscle_group ?? '');
-      setConfidence(ai.confidence ?? 0);
+      const ai = await readNameplateText(photo.base64 ?? '');
+      if (ai.text) {
+        setMachineName(ai.text);
+        setConfidence(100);
+      } else {
+        Alert.alert(
+          'Kunde inte läsa skylten',
+          ai.error ? `Försök igen eller ange namnet manuellt. (${ai.error})` : 'Ingen läsbar text hittades på bilden. Försök igen eller ange namnet manuellt.',
+          [{ text: 'OK' }]
+        );
+      }
     } catch {
-      setMachineName('');
-      setMuscleGroup('');
-      setConfidence(0);
+      Alert.alert('Kunde inte läsa skylten', 'Försök igen eller ange namnet manuellt.', [{ text: 'OK' }]);
     } finally {
       setScanning(false);
       setHasResult(true);
@@ -79,29 +84,35 @@ export default function GymScanScreen() {
     const finalCity = city.trim() || null;
     const finalGymVal = finalGym || null;
 
+    const doSave = () => {
+      saveMachine({
+        name:         machineName.trim(),
+        image_path:   imagePath,
+        city:         finalCity,
+        gym:          finalGymVal,
+        muscle_group: muscleGroup || null,
+      });
+      setSavedCount(c => c + 1);
+      setHasResult(false);
+      setMachineName('');
+      setMuscleGroup('');
+      setConfidence(0);
+      setImagePath(null);
+      setCaptureStep('machine');
+    };
+
     if (machineExists(machineName.trim(), finalCity, finalGymVal)) {
       Alert.alert(
         'Maskin finns redan',
-        `"${machineName.trim()}" är redan registrerad på detta gym.`,
-        [{ text: 'OK' }]
+        `"${machineName.trim()}" är redan registrerad på detta gym. Är det en annan övning på samma maskin? Då kan du spara den som en till variant — fotot hjälper dig skilja dem åt i listan.`,
+        [
+          { text: 'Avbryt', style: 'cancel' },
+          { text: 'Spara ändå', onPress: doSave },
+        ]
       );
       return;
     }
-
-    saveMachine({
-      name:         machineName.trim(),
-      image_path:   imagePath,
-      city:         finalCity,
-      gym:          finalGymVal,
-      muscle_group: muscleGroup || null,
-    });
-    setSavedCount(c => c + 1);
-    setHasResult(false);
-    setMachineName('');
-    setMuscleGroup('');
-    setConfidence(0);
-    setImagePath(null);
-    setCaptureStep('machine');
+    doSave();
   }
 
   const gymLabel      = showCustomGym ? customGym : gym;

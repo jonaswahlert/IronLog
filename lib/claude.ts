@@ -41,6 +41,20 @@ export async function identifyMachine(base64: string): Promise<{ machine_type: s
   return { machine_type: '', confidence: 0, muscle_group: 'Övrigt' };
 }
 
+export async function readNameplateText(base64: string): Promise<{ text: string; error?: string }> {
+  const raw = await geminiVision(base64,
+    'This is a close-up photo of a gym machine\'s name plate or label. Read the exact text printed on it — this is the machine\'s official model name. Ignore brand/manufacturer logos unless no other text exists. Respond with ONLY the exact name text, nothing else — no JSON, no quotes, no explanation. If no readable text is visible, respond with exactly: NONE'
+  );
+  if (raw.startsWith('__ERROR__:')) {
+    return { text: '', error: raw.slice(10).trim() };
+  }
+  const cleaned = raw.trim().replace(/^["'“”]|["'“”]$/g, '');
+  if (!cleaned || cleaned.toUpperCase() === 'NONE') {
+    return { text: '' };
+  }
+  return { text: cleaned };
+}
+
 // ── Program generator (text-only, no image) ──────────────────
 export type ProgramExercise = {
   name: string;
@@ -135,4 +149,53 @@ export async function readWeightFromImage(base64: string): Promise<{ weight_kg: 
     try { return JSON.parse(match[0]); } catch {}
   }
   return { weight_kg: 0, confidence: 0, label: '' };
+}
+
+// ── Body progress comparison (two photos) ─────────────────
+export type BodyPart = {
+  name: string;
+  change_text: string;
+  change_pct: number;
+};
+
+export async function compareBodyPhotos(params: {
+  base64Before: string;
+  base64After: string;
+  language: 'sv' | 'en';
+}): Promise<{ parts: BodyPart[]; overall: string; error?: string }> {
+  const { base64Before, base64After, language } = params;
+
+  const prompt = language === 'sv'
+    ? `Jämför dessa två kroppsbilder (Bild 1 = före, Bild 2 = efter), tagna vid olika tillfällen. För varje kroppsdel som syns tydligt i båda bilderna (t.ex. Axlar, Bröst, Armar, Mage, Ben — ta bara med de som faktiskt syns i bilderna), ge:\n1. En kort beskrivning av den synliga skillnaden ("Ingen tydlig skillnad" om ingen syns)\n2. En ungefärlig UPPSKATTAD procentuell förändring (kan vara negativ) — detta är en visuell gissning, inte ett exakt mått\n\nSvara BARA med JSON, ingen markdown:\n{"parts":[{"name":"Axlar","change_text":"Ser bredare och mer definierade ut","change_pct":8}],"overall":"Kort sammanfattning av helhetsintrycket"}\n\nViktigt: detta är en grov AI-uppskattning baserad på foton, inte en exakt mätning — låt procenttalen spegla den osäkerheten (normalt små värden, ungefär -10 till +15, om det inte är en dramatisk skillnad).`
+    : `Compare these two body photos (Image 1 = before, Image 2 = after), taken at different times. For each body part clearly visible in both images (e.g. Shoulders, Chest, Arms, Waist, Legs — only include ones actually visible), give:\n1. A short description of the visible difference ("No clear difference" if none)\n2. A rough ESTIMATED percentage change (can be negative) — this is a visual guess, not an exact measurement\n\nRespond ONLY with JSON, no markdown:\n{"parts":[{"name":"Shoulders","change_text":"Look broader and more defined","change_pct":8}],"overall":"Short summary of the overall impression"}\n\nImportant: this is a rough AI estimate based on photos, not an exact measurement — let the percentages reflect that uncertainty (typically small values, roughly -10 to +15, unless the difference is dramatic).`;
+
+  try {
+    const res = await fetch(GEMINI_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: 'image/jpeg', data: base64Before } },
+            { inline_data: { mime_type: 'image/jpeg', data: base64After } },
+          ],
+        }],
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
+      }),
+    });
+    const data = await res.json();
+    const text: string | undefined = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) return { parts: [], overall: '', error: JSON.stringify(data.error ?? data) };
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        const parsed = JSON.parse(match[0]);
+        if (Array.isArray(parsed.parts)) return { parts: parsed.parts, overall: parsed.overall ?? '' };
+      } catch {}
+    }
+    return { parts: [], overall: '', error: 'Could not parse AI response' };
+  } catch (e: any) {
+    return { parts: [], overall: '', error: e?.message ?? 'Network error' };
+  }
 }

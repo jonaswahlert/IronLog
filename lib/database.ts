@@ -224,6 +224,96 @@ export function addExercise(data: Omit<Exercise, 'id' | 'created_at'>): void {
   );
 }
 
+// ── Profile ───────────────────────────────────────────────
+export type Profile = {
+  id: number;
+  name: string | null;
+  age: number | null;
+  height_cm: number | null;
+  weight_kg: number | null;
+  goal: string | null;
+  avatar_path: string | null;
+  updated_at: string;
+};
+
+function ensureProfileTable(): void {
+  db.execSync(`CREATE TABLE IF NOT EXISTS profile (
+    id          INTEGER PRIMARY KEY CHECK (id = 1),
+    name        TEXT,
+    age         INTEGER,
+    height_cm   REAL,
+    weight_kg   REAL,
+    goal        TEXT,
+    avatar_path TEXT,
+    updated_at  TEXT DEFAULT (datetime('now'))
+  )`);
+}
+
+export function getProfile(): Profile | null {
+  ensureProfileTable();
+  return db.getFirstSync<Profile>(`SELECT * FROM profile WHERE id = 1`) ?? null;
+}
+
+export function saveProfile(data: Partial<Omit<Profile, 'id' | 'updated_at'>>): void {
+  ensureProfileTable();
+  const existing = db.getFirstSync<{ id: number }>(`SELECT id FROM profile WHERE id = 1`);
+  if (!existing) {
+    db.runSync(
+      `INSERT INTO profile (id, name, age, height_cm, weight_kg, goal, avatar_path) VALUES (1, ?, ?, ?, ?, ?, ?)`,
+      [data.name ?? null, data.age ?? null, data.height_cm ?? null, data.weight_kg ?? null, data.goal ?? null, data.avatar_path ?? null]
+    );
+    return;
+  }
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+  if (data.name        !== undefined) { fields.push('name = ?');        values.push(data.name); }
+  if (data.age         !== undefined) { fields.push('age = ?');         values.push(data.age); }
+  if (data.height_cm   !== undefined) { fields.push('height_cm = ?');   values.push(data.height_cm); }
+  if (data.weight_kg   !== undefined) { fields.push('weight_kg = ?');   values.push(data.weight_kg); }
+  if (data.goal        !== undefined) { fields.push('goal = ?');        values.push(data.goal); }
+  if (data.avatar_path !== undefined) { fields.push('avatar_path = ?'); values.push(data.avatar_path); }
+  if (fields.length === 0) return;
+  fields.push(`updated_at = datetime('now')`);
+  values.push(1);
+  db.runSync(`UPDATE profile SET ${fields.join(', ')} WHERE id = ?`, values);
+}
+
+// ── Progress photos ───────────────────────────────────────
+export type ProgressPhoto = {
+  id: number;
+  image_path: string;
+  taken_at: string;
+  created_at: string;
+};
+
+function ensureProgressPhotosTable(): void {
+  db.execSync(`CREATE TABLE IF NOT EXISTS progress_photos (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_path TEXT NOT NULL,
+    taken_at   TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+}
+
+export function addProgressPhoto(imagePath: string, takenAt: string): ProgressPhoto {
+  ensureProgressPhotosTable();
+  const result = db.runSync(
+    `INSERT INTO progress_photos (image_path, taken_at) VALUES (?, ?)`,
+    [imagePath, takenAt]
+  );
+  return db.getFirstSync<ProgressPhoto>(`SELECT * FROM progress_photos WHERE id = ?`, [result.lastInsertRowId])!;
+}
+
+export function getAllProgressPhotos(): ProgressPhoto[] {
+  ensureProgressPhotosTable();
+  return db.getAllSync<ProgressPhoto>(`SELECT * FROM progress_photos ORDER BY taken_at DESC, id DESC`);
+}
+
+export function deleteProgressPhoto(id: number): void {
+  ensureProgressPhotosTable();
+  db.runSync(`DELETE FROM progress_photos WHERE id = ?`, [id]);
+}
+
 // ── Saved programs ────────────────────────────────────────
 export type SavedProgram = {
   id: number;
