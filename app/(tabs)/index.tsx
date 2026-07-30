@@ -52,11 +52,13 @@ const GUIDE = {
       },
     ],
     appSteps: [
-      { step: '1', h: 'Starta pass',      p: 'Tryck "Starta träningspass" och ange stad och gym.' },
-      { step: '2', h: 'Skanna maskin',    p: 'Tryck "Lägg till övning" → fota maskinen → AI identifierar den automatiskt.' },
-      { step: '3', h: 'Registrera vikt',  p: 'Fota viktplattan eller ange kg manuellt.' },
-      { step: '4', h: 'Spara övning',     p: 'Kontrollera set/reps och tryck Spara. Upprepa för varje maskin.' },
-      { step: '5', h: 'Avsluta',          p: 'Tryck "Avsluta pass" när träningen är klar.' },
+      { step: '1', h: 'Starta pass',              p: 'Tryck "Starta träningspass" och ange stad och gym.' },
+      { step: '2', h: 'Lägg till övning',         p: 'Tryck "+ Lägg till övning" för varje maskin du tränar på.' },
+      { step: '3', h: 'Ny maskin? Skanna den',     p: 'Bara första gången du tränar på en maskin: fota den → AI identifierar den automatiskt och sparar den i ditt register.' },
+      { step: '4', h: 'Tränat här förut? Välj i listan', p: 'Nästa gång du tränar på samma maskin: välj den bara i din sparade lista — ingen ny skanning behövs.' },
+      { step: '5', h: 'Registrera vikt',           p: 'Fota viktplattan eller ange kg manuellt.' },
+      { step: '6', h: 'Spara & upprepa',           p: 'Kontrollera set/reps, tryck Spara. Upprepa för varje maskin i passet.' },
+      { step: '7', h: 'Avsluta pass',              p: 'Tryck "Avsluta pass" när träningen är klar.' },
     ],
     supplements: [
       { icon: '🥛', h: 'Protein',  p: 'Byggstenen för muskelåterhämtning och -tillväxt. Om du har svårt att nå ditt dagliga proteinbehov via vanlig mat kan ett proteinpulver (vassle eller växtbaserat) vara ett enkelt sätt att täcka mellanskillnaden. Total mängd protein per dag är viktigare än exakt timing runt träningspasset.' },
@@ -100,11 +102,13 @@ const GUIDE = {
       },
     ],
     appSteps: [
-      { step: '1', h: 'Start session',    p: 'Tap "Start training session" and enter city and gym.' },
-      { step: '2', h: 'Scan machine',     p: 'Tap "Add exercise" → photograph the machine → AI identifies it automatically.' },
-      { step: '3', h: 'Log weight',       p: 'Photograph the weight plate or enter kg manually.' },
-      { step: '4', h: 'Save exercise',    p: 'Check sets/reps and tap Save. Repeat for each machine.' },
-      { step: '5', h: 'Finish',           p: 'Tap "End session" when you are done training.' },
+      { step: '1', h: 'Start session',            p: 'Tap "Start training session" and enter city and gym.' },
+      { step: '2', h: 'Add exercise',              p: 'Tap "+ Add exercise" for each machine you train on.' },
+      { step: '3', h: 'New machine? Scan it',      p: 'Only the first time you use a machine: photograph it → AI identifies it automatically and saves it to your registry.' },
+      { step: '4', h: 'Used it before? Pick it',   p: 'Next time on the same machine: just select it from your saved list — no need to scan again.' },
+      { step: '5', h: 'Log weight',                p: 'Photograph the weight plate or enter kg manually.' },
+      { step: '6', h: 'Save & repeat',              p: 'Check sets/reps, tap Save. Repeat for each machine in the session.' },
+      { step: '7', h: 'Finish session',            p: 'Tap "End session" when you are done training.' },
     ],
     supplements: [
       { icon: '🥛', h: 'Protein',  p: 'The building block for muscle recovery and growth. If it\'s hard to hit your daily protein target from regular food, a protein powder (whey or plant-based) is an easy way to cover the gap. Total daily protein matters more than exact timing around your workout.' },
@@ -330,99 +334,17 @@ export default function SessionScreen() {
 
         {!session ? (
           <>
-            {/* ── Guide section – always visible at top ── */}
-            <Text style={s.guideTitle}>
-              {lang === 'sv' ? 'Lär dig träna' : 'Learn to train'}
-            </Text>
-            <View style={s.guideTabs}>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'app' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('app')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'app' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabApp}
+            {/* ── Guide entry point – collapsed behind a button ── */}
+            <TouchableOpacity style={s.guideOpenBtn} onPress={() => setGuideOpen(true)}>
+              <Text style={s.guideOpenIcon}>📖</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={s.guideOpenTitle}>{lang === 'sv' ? 'Lär dig träna' : 'Learn to train'}</Text>
+                <Text style={s.guideOpenSub}>
+                  {lang === 'sv' ? 'Hur appen funkar, muskelgrupper, kosttillskott' : 'How the app works, muscle groups, supplements'}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'basics' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('basics')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'basics' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabBasics}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'muscles' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('muscles')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'muscles' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabMuscles}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'supplements' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('supplements')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'supplements' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabSupplements}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            {guideTab === 'app' ? (
-              <View style={s.groupList}>
-                {GUIDE[lang].appSteps.map((step, i) => (
-                  <View key={i} style={s.groupRow}>
-                    <View style={s.appStepNum}>
-                      <Text style={s.appStepNumText}>{step.step}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.groupName}>{step.h}</Text>
-                      <Text style={s.groupMuscles}>{step.p}</Text>
-                    </View>
-                  </View>
-                ))}
               </View>
-            ) : guideTab === 'basics' ? (
-              <View style={s.basicsGrid}>
-                {GUIDE[lang].basics.map((b, i) => (
-                  <View key={i} style={s.basicCard}>
-                    <Text style={s.basicIcon}>{b.icon}</Text>
-                    <Text style={s.basicH}>{b.h}</Text>
-                    <Text style={s.basicP}>{b.p}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : guideTab === 'muscles' ? (
-              <View style={s.groupList}>
-                {GUIDE[lang].groups.map((g, i) => (
-                  <TouchableOpacity key={i} style={s.groupRow} onPress={() => setMuscleDetailIdx(i)}>
-                    <View style={[s.groupDot, { backgroundColor: g.color }]} />
-                    <View style={{ flex: 1 }}>
-                      <View style={s.groupNameRow}>
-                        <Text style={s.groupName}>{g.name}</Text>
-                        <View style={[s.groupSubBadge, { backgroundColor: g.color + '22', borderColor: g.color + '55' }]}>
-                          <Text style={[s.groupSubText, { color: g.color }]}>{g.sub}</Text>
-                        </View>
-                      </View>
-                      <Text style={s.groupMuscles}>{g.muscles}</Text>
-                    </View>
-                    <Text style={s.groupArrow}>›</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              <View style={s.groupList}>
-                {GUIDE[lang].supplements.map((sup, i) => (
-                  <View key={i} style={s.groupRow}>
-                    <Text style={s.supplementIcon}>{sup.icon}</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.groupName}>{sup.h}</Text>
-                      <Text style={s.groupMuscles}>{sup.p}</Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
+              <Text style={s.progCardArrow}>→</Text>
+            </TouchableOpacity>
 
             {/* ── Action buttons – at bottom ── */}
             {savedProgram ? (
@@ -541,6 +463,111 @@ export default function SessionScreen() {
             <TouchableOpacity style={s.modalSkip} onPress={() => setProgramDayModal(null)}>
               <Text style={s.modalSkipText}>{lang === 'sv' ? 'Avbryt' : 'Cancel'}</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Guide modal – how the app works, muscle groups, supplements */}
+      <Modal visible={guideOpen} transparent animationType="slide">
+        <View style={s.modalOverlay}>
+          <View style={s.guideModalCard}>
+            <View style={s.guideModalHeader}>
+              <Text style={s.guideTitle}>{lang === 'sv' ? 'Lär dig träna' : 'Learn to train'}</Text>
+              <TouchableOpacity onPress={() => setGuideOpen(false)}>
+                <Text style={s.guideModalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.guideTabs} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
+              <TouchableOpacity
+                style={[s.guideTabBtn, guideTab === 'app' && s.guideTabBtnActive]}
+                onPress={() => setGuideTab('app')}
+              >
+                <Text style={[s.guideTabText, guideTab === 'app' && s.guideTabTextActive]}>
+                  {GUIDE[lang].tabApp}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.guideTabBtn, guideTab === 'basics' && s.guideTabBtnActive]}
+                onPress={() => setGuideTab('basics')}
+              >
+                <Text style={[s.guideTabText, guideTab === 'basics' && s.guideTabTextActive]}>
+                  {GUIDE[lang].tabBasics}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.guideTabBtn, guideTab === 'muscles' && s.guideTabBtnActive]}
+                onPress={() => setGuideTab('muscles')}
+              >
+                <Text style={[s.guideTabText, guideTab === 'muscles' && s.guideTabTextActive]}>
+                  {GUIDE[lang].tabMuscles}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.guideTabBtn, guideTab === 'supplements' && s.guideTabBtnActive]}
+                onPress={() => setGuideTab('supplements')}
+              >
+                <Text style={[s.guideTabText, guideTab === 'supplements' && s.guideTabTextActive]}>
+                  {GUIDE[lang].tabSupplements}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 16 }}>
+              {guideTab === 'app' ? (
+                <View style={s.groupList}>
+                  {GUIDE[lang].appSteps.map((step, i) => (
+                    <View key={i} style={s.groupRow}>
+                      <View style={s.appStepNum}>
+                        <Text style={s.appStepNumText}>{step.step}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.groupName}>{step.h}</Text>
+                        <Text style={s.groupMuscles}>{step.p}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              ) : guideTab === 'basics' ? (
+                <View style={s.basicsGrid}>
+                  {GUIDE[lang].basics.map((b, i) => (
+                    <View key={i} style={s.basicCard}>
+                      <Text style={s.basicIcon}>{b.icon}</Text>
+                      <Text style={s.basicH}>{b.h}</Text>
+                      <Text style={s.basicP}>{b.p}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : guideTab === 'muscles' ? (
+                <View style={s.groupList}>
+                  {GUIDE[lang].groups.map((g, i) => (
+                    <TouchableOpacity key={i} style={s.groupRow} onPress={() => setMuscleDetailIdx(i)}>
+                      <View style={[s.groupDot, { backgroundColor: g.color }]} />
+                      <View style={{ flex: 1 }}>
+                        <View style={s.groupNameRow}>
+                          <Text style={s.groupName}>{g.name}</Text>
+                          <View style={[s.groupSubBadge, { backgroundColor: g.color + '22', borderColor: g.color + '55' }]}>
+                            <Text style={[s.groupSubText, { color: g.color }]}>{g.sub}</Text>
+                          </View>
+                        </View>
+                        <Text style={s.groupMuscles}>{g.muscles}</Text>
+                      </View>
+                      <Text style={s.groupArrow}>›</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <View style={s.groupList}>
+                  {GUIDE[lang].supplements.map((sup, i) => (
+                    <View key={i} style={s.groupRow}>
+                      <Text style={s.supplementIcon}>{sup.icon}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.groupName}>{sup.h}</Text>
+                        <Text style={s.groupMuscles}>{sup.p}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -748,7 +775,7 @@ const s = StyleSheet.create({
   progCardTitle:     { fontSize: 14, fontWeight: '700', color: '#dde3f0', marginBottom: 2 },
   progCardSub:       { fontSize: 12, color: '#7a85a0' },
   progCardArrow:     { color: '#f04a18', fontSize: 18, fontWeight: '700' },
-  guideTitle:        { fontSize: 13, fontWeight: '700', color: '#7a85a0', letterSpacing: 0.3, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
+  guideTitle:        { fontSize: 20, fontWeight: '800', color: '#dde3f0', letterSpacing: -0.4 },
   // Session picker
   pickRow:           { flexDirection: 'row', alignItems: 'center', backgroundColor: '#242840', borderRadius: 14, padding: 14, marginBottom: 8 },
   pickRowToday:      { borderWidth: 1.5, borderColor: '#f04a18', backgroundColor: 'rgba(240,74,24,.07)' },
@@ -772,8 +799,15 @@ const s = StyleSheet.create({
   progExName:        { fontSize: 14, fontWeight: '700', color: '#dde3f0' },
   progExMeta:        { fontSize: 12, color: '#7a85a0' },
   // Guide
-  guideTabs:         { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 14 },
-  guideTabBtn:       { flex: 1, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, padding: 11, alignItems: 'center' },
+  guideOpenBtn:      { flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16 },
+  guideOpenIcon:     { fontSize: 24 },
+  guideOpenTitle:    { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 2 },
+  guideOpenSub:      { fontSize: 12, color: '#7a85a0', lineHeight: 16 },
+  guideModalCard:    { backgroundColor: '#141720', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingBottom: 40, maxHeight: '85%' },
+  guideModalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 14 },
+  guideModalClose:   { fontSize: 20, color: '#7a85a0', padding: 4 },
+  guideTabs:         { paddingHorizontal: 16, marginBottom: 14 },
+  guideTabBtn:       { backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' },
   guideTabBtnActive: { backgroundColor: '#f04a18', borderColor: '#f04a18' },
   guideTabText:      { fontSize: 13, fontWeight: '700', color: '#7a85a0' },
   guideTabTextActive:{ color: '#fff' },
