@@ -12,6 +12,7 @@ import { useTranslation } from '../../lib/i18n';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import { MUSCLE_GROUPS } from '../../lib/muscles';
 import { GYM_CHAINS } from '../../lib/gyms';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 export default function MachinesScreen() {
   const t = useTranslation();
@@ -171,7 +172,7 @@ export default function MachinesScreen() {
             <View key={machine.id} style={s.machineCard}>
               <View style={s.machineThumb}>
                 {machine.image_path
-                  ? <Image source={{ uri: machine.image_path }} style={s.machineImg} />
+                  ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} />
                   : <Text style={{ fontSize: 36 }}>🏋️</Text>
                 }
               </View>

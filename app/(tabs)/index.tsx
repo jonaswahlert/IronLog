@@ -16,6 +16,7 @@ import { useTranslation } from '../../lib/i18n';
 import { useLang } from '../../lib/LanguageContext';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import { MUSCLE_GROUPS } from '../../lib/muscles';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 const GUIDE = {
   sv: {
@@ -316,7 +317,7 @@ export default function SessionScreen() {
               <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
                 <View style={s.exThumb}>
                   {ex.machine_image_path
-                    ? <Image source={{ uri: ex.machine_image_path }} style={s.exThumbImg} />
+                    ? <Image source={{ uri: resolveImagePath(ex.machine_image_path)! }} style={s.exThumbImg} />
                     : <Text style={{ fontSize: 22 }}>🏋️</Text>
                   }
                 </View>

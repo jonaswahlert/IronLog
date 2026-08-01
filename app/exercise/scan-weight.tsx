@@ -9,6 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from '../../lib/i18n';
 import { readWeightFromImage } from '../../lib/claude';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 export default function ScanWeightScreen() {
   const t = useTranslation();
@@ -89,7 +90,7 @@ export default function ScanWeightScreen() {
           {!!params.machineType && (
             <View style={s.machineContext}>
               {!!params.machineImagePath && (
-                <Image source={{ uri: params.machineImagePath }} style={s.machineContextImg} />
+                <Image source={{ uri: resolveImagePath(params.machineImagePath)! }} style={s.machineContextImg} />
               )}
               <Text style={s.machineContextText} numberOfLines={1}>{params.machineType}</Text>
             </View>
@@ -162,7 +163,7 @@ export default function ScanWeightScreen() {
       {!!params.machineType && (
         <View style={s.machineContextOverlay}>
           {!!params.machineImagePath && (
-            <Image source={{ uri: params.machineImagePath }} style={s.machineContextImg} />
+            <Image source={{ uri: resolveImagePath(params.machineImagePath)! }} style={s.machineContextImg} />
           )}
           <Text style={s.machineContextText} numberOfLines={1}>{params.machineType}</Text>
         </View>

@@ -11,6 +11,7 @@ import {
 } from '../lib/database';
 import { compareBodyPhotos, BodyPart } from '../lib/claude';
 import { useLang } from '../lib/LanguageContext';
+import { resolveImagePath } from '../lib/imagePaths';
 
 const ACCENT = '#f04a18';
 const TEAL   = '#1ecfa4';
@@ -92,8 +93,8 @@ export default function ProgressPhotosScreen() {
       .sort((x, y) => x.taken_at.localeCompare(y.taken_at));
     setComparing(true);
     try {
-      const base64Before = await FileSystem.readAsStringAsync(a.image_path, { encoding: 'base64' });
-      const base64After  = await FileSystem.readAsStringAsync(b.image_path, { encoding: 'base64' });
+      const base64Before = await FileSystem.readAsStringAsync(resolveImagePath(a.image_path)!, { encoding: 'base64' });
+      const base64After  = await FileSystem.readAsStringAsync(resolveImagePath(b.image_path)!, { encoding: 'base64' });
       const res = await compareBodyPhotos({ base64Before, base64After, language: lang });
       if (res.error || res.parts.length === 0) {
         Alert.alert(
@@ -139,7 +140,7 @@ export default function ProgressPhotosScreen() {
                   onPress={() => compareMode ? toggleSelect(p.id) : undefined}
                   activeOpacity={compareMode ? 0.7 : 1}
                 >
-                  <Image source={{ uri: p.image_path }} style={s.photoImg} />
+                  <Image source={{ uri: resolveImagePath(p.image_path)! }} style={s.photoImg} />
                   <View style={s.photoDateBadge}>
                     <Text style={s.photoDateText}>{p.taken_at}</Text>
                   </View>

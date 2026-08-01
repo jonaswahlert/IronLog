@@ -6,6 +6,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { addExercise, endSession, getMachineImageByName } from '../../lib/database';
 import { ProgramExercise } from '../../lib/claude';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 type ExState = { weight: string; sets: string; reps: string; saved: boolean };
 
@@ -83,7 +84,7 @@ export default function LiveSessionScreen() {
   const [images, setImages] = useState<(string | null)[]>([]);
 
   useEffect(() => {
-    setImages(exercises.map(ex => getMachineImageByName(ex.name)));
+    setImages(exercises.map(ex => resolveImagePath(getMachineImageByName(ex.name))));
   }, []);
 
   function update(i: number, field: keyof ExState, value: string | boolean) {

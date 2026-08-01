@@ -10,6 +10,7 @@ import { saveMachine, machineExists, getLastCity, getLastGym } from '../lib/data
 import { MUSCLE_GROUPS } from '../lib/muscles';
 import { identifyMachine, readNameplateText } from '../lib/claude';
 import { GYM_CHAINS } from '../lib/gyms';
+import { resolveImagePath } from '../lib/imagePaths';
 
 export default function GymScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -176,7 +177,7 @@ export default function GymScanScreen() {
         <ScrollView style={s.resultScroll} contentContainerStyle={{ paddingBottom: 40 }}>
           <View style={s.resultCard}>
             {imagePath && (
-              <Image source={{ uri: imagePath }} style={s.machinePreview} resizeMode="cover" />
+              <Image source={{ uri: resolveImagePath(imagePath)! }} style={s.machinePreview} resizeMode="cover" />
             )}
             <View style={s.resultHeader}>
               <View style={s.dot} />

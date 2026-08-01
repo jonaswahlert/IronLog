@@ -7,6 +7,7 @@ import {
 } from '../../lib/database';
 import { useTranslation } from '../../lib/i18n';
 import { LanguageToggle } from '../../components/LanguageToggle';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 export default function SelectMachineScreen() {
   const t = useTranslation();
@@ -127,7 +128,7 @@ export default function SelectMachineScreen() {
               <TouchableOpacity key={machine.id} style={s.machineCard} onPress={() => selectMachine(machine)}>
                 <View style={s.machineThumb}>
                   {machine.image_path
-                    ? <Image source={{ uri: machine.image_path }} style={s.machineImg} />
+                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} />
                     : <Text style={{ fontSize: 32 }}>🏋️</Text>
                   }
                 </View>

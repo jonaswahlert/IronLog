@@ -10,6 +10,7 @@ import { saveMachine, machineExists } from '../../lib/database';
 import { MUSCLE_GROUPS } from '../../lib/muscles';
 import { useTranslation } from '../../lib/i18n';
 import { identifyMachine, readNameplateText } from '../../lib/claude';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 type Step = 'machine' | 'nameplate' | 'result';
 
@@ -172,7 +173,7 @@ export default function ScanMachineScreen() {
         </View>
         <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
           {machineImagePath && (
-            <Image source={{ uri: machineImagePath }} style={s.machinePreview} resizeMode="cover" />
+            <Image source={{ uri: resolveImagePath(machineImagePath)! }} style={s.machinePreview} resizeMode="cover" />
           )}
 
           <View style={s.resultHeader}>

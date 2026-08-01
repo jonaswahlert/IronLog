@@ -12,6 +12,7 @@ import {
 } from '../../lib/database';
 import { useLang } from '../../lib/LanguageContext';
 import { LanguageToggle } from '../../components/LanguageToggle';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 const ACCENT = '#f04a18';
 
@@ -125,7 +126,7 @@ export default function ProfileScreen() {
       <View style={s.avatarWrap}>
         <TouchableOpacity style={s.avatarCircle} onPress={pickAvatar}>
           {avatarPath
-            ? <Image source={{ uri: avatarPath }} style={s.avatarImg} />
+            ? <Image source={{ uri: resolveImagePath(avatarPath)! }} style={s.avatarImg} />
             : <Text style={s.avatarPlaceholder}>👤</Text>
           }
           <View style={s.avatarEditBadge}>

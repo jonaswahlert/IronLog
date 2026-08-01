@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { addExercise } from '../../lib/database';
 import { useTranslation } from '../../lib/i18n';
 import { LanguageToggle } from '../../components/LanguageToggle';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 export default function NewExerciseScreen() {
   const t = useTranslation();
@@ -69,7 +70,7 @@ export default function NewExerciseScreen() {
       <Text style={s.sectionLabel}>{t('machine')}</Text>
       <View style={[s.inputCard, s.inputCardRow]}>
         {!!machineImagePath && (
-          <Image source={{ uri: machineImagePath }} style={s.machineThumb} />
+          <Image source={{ uri: resolveImagePath(machineImagePath)! }} style={s.machineThumb} />
         )}
         <View style={{ flex: 1 }}>
           <TextInput

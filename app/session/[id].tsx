@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '../../lib/i18n';
 import { MUSCLE_GROUPS } from '../../lib/muscles';
 import { GYM_CHAINS } from '../../lib/gyms';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 export default function SessionDetailScreen() {
   const t = useTranslation();
@@ -127,7 +128,7 @@ export default function SessionDetailScreen() {
         <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
           <View style={s.exThumb}>
             {ex.machine_image_path
-              ? <Image source={{ uri: ex.machine_image_path }} style={s.exThumbImg} />
+              ? <Image source={{ uri: resolveImagePath(ex.machine_image_path)! }} style={s.exThumbImg} />
               : <Text style={{ fontSize: 22 }}>🏋️</Text>
             }
           </View>
