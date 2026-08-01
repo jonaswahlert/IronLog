@@ -189,7 +189,7 @@ const s = StyleSheet.create({
   sectionLabel:    { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 16, marginBottom: 8, marginTop: 4 },
   inputCard:       { marginHorizontal: 16, marginBottom: 10, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16 },
   inputCardRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  machineThumb:    { width: 52, height: 52, borderRadius: 10, flexShrink: 0 },
+  machineThumb:    { width: 72, height: 72, borderRadius: 12, flexShrink: 0 },
   bigInput:        { fontSize: 18, fontWeight: '600', color: '#dde3f0' },
   sourceBadge:     { fontSize: 11, color: '#1ecfa4', marginTop: 6, fontWeight: '600' },
   choiceRow:       { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 },

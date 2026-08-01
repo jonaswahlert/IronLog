@@ -751,7 +751,7 @@ const s = StyleSheet.create({
   statLbl:           { fontSize: 10, color: '#7a85a0', fontWeight: '600', letterSpacing: 0.6, marginTop: 2 },
   sectionLabel:      { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 24, marginBottom: 12 },
   exCard:            { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 10 },
-  exThumb:           { width: 52, height: 52, borderRadius: 10, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  exThumb:           { width: 72, height: 72, borderRadius: 12, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   exThumbImg:        { width: '100%', height: '100%' },
   exName:            { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 4 },
   exMeta:            { fontSize: 12, color: '#7a85a0' },

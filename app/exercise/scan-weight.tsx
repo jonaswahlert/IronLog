@@ -213,7 +213,7 @@ const s = StyleSheet.create({
   closeBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
   machineContextOverlay: { position: 'absolute', top: 128, left: 24, right: 24, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 12, padding: 8 },
   machineContext:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, padding: 8, marginBottom: 16 },
-  machineContextImg: { width: 36, height: 36, borderRadius: 8 },
+  machineContextImg: { width: 52, height: 52, borderRadius: 10 },
   machineContextText: { color: '#dde3f0', fontSize: 13, fontWeight: '600', flexShrink: 1 },
   closeText:        { color: '#fff', fontSize: 16 },
   topTitle:         { fontSize: 18, fontWeight: '700', color: '#fff' },
