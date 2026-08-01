@@ -26,6 +26,7 @@ export default function GymScanScreen() {
   const [muscleGroup, setMuscleGroup] = useState('');
   const [confidence, setConfidence]   = useState(0);
   const [imagePath, setImagePath]     = useState<string | null>(null);
+  const [nameplateImagePath, setNameplateImagePath] = useState<string | null>(null);
 
   const [savedCount, setSavedCount]     = useState(0);
   const [captureStep, setCaptureStep]   = useState<'machine' | 'nameplate'>('machine');
@@ -59,6 +60,9 @@ export default function GymScanScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo) return;
+      const dest = FileSystem.documentDirectory + `gym_nameplate_${Date.now()}.jpg`;
+      await FileSystem.moveAsync({ from: photo.uri, to: dest });
+      setNameplateImagePath(dest);
       const ai = await readNameplateText(photo.base64 ?? '');
       if (ai.text) {
         setMachineName(ai.text);
@@ -86,11 +90,12 @@ export default function GymScanScreen() {
 
     const doSave = () => {
       saveMachine({
-        name:         machineName.trim(),
-        image_path:   imagePath,
-        city:         finalCity,
-        gym:          finalGymVal,
-        muscle_group: muscleGroup || null,
+        name:                 machineName.trim(),
+        image_path:           imagePath,
+        city:                 finalCity,
+        gym:                  finalGymVal,
+        muscle_group:         muscleGroup || null,
+        nameplate_image_path: nameplateImagePath,
       });
       setSavedCount(c => c + 1);
       setHasResult(false);
@@ -98,6 +103,7 @@ export default function GymScanScreen() {
       setMuscleGroup('');
       setConfidence(0);
       setImagePath(null);
+      setNameplateImagePath(null);
       setCaptureStep('machine');
     };
 
@@ -220,7 +226,7 @@ export default function GymScanScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={s.retryBtn}
-              onPress={() => { setHasResult(false); setMachineName(''); setMuscleGroup(''); setConfidence(0); setImagePath(null); setCaptureStep('machine'); }}
+              onPress={() => { setHasResult(false); setMachineName(''); setMuscleGroup(''); setConfidence(0); setImagePath(null); setNameplateImagePath(null); setCaptureStep('machine'); }}
             >
               <Text style={s.retryText}>↩ Skanna om</Text>
             </TouchableOpacity>

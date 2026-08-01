@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Modal, Alert, ImageBackground, KeyboardAvoidingView, Platform,
+  StyleSheet, Modal, Alert, Image, ImageBackground, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import {
@@ -315,7 +315,10 @@ export default function SessionScreen() {
             {exercises.map(ex => (
               <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
                 <View style={s.exThumb}>
-                  <Text style={{ fontSize: 22 }}>🏋️</Text>
+                  {ex.machine_image_path
+                    ? <Image source={{ uri: ex.machine_image_path }} style={s.exThumbImg} />
+                    : <Text style={{ fontSize: 22 }}>🏋️</Text>
+                  }
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? t('unknown_machine')}</Text>
@@ -477,40 +480,44 @@ export default function SessionScreen() {
                 <Text style={s.guideModalClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.guideTabs} contentContainerStyle={{ gap: 8, paddingRight: 16 }}>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'app' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('app')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'app' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabApp}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'basics' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('basics')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'basics' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabBasics}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'muscles' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('muscles')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'muscles' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabMuscles}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[s.guideTabBtn, guideTab === 'supplements' && s.guideTabBtnActive]}
-                onPress={() => setGuideTab('supplements')}
-              >
-                <Text style={[s.guideTabText, guideTab === 'supplements' && s.guideTabTextActive]}>
-                  {GUIDE[lang].tabSupplements}
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
+            <View style={s.guideTabs}>
+              <View style={s.guideTabRow}>
+                <TouchableOpacity
+                  style={[s.guideTabBtn, guideTab === 'app' && s.guideTabBtnActive]}
+                  onPress={() => setGuideTab('app')}
+                >
+                  <Text style={[s.guideTabText, guideTab === 'app' && s.guideTabTextActive]} numberOfLines={1} adjustsFontSizeToFit>
+                    {GUIDE[lang].tabApp}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.guideTabBtn, guideTab === 'basics' && s.guideTabBtnActive]}
+                  onPress={() => setGuideTab('basics')}
+                >
+                  <Text style={[s.guideTabText, guideTab === 'basics' && s.guideTabTextActive]} numberOfLines={1} adjustsFontSizeToFit>
+                    {GUIDE[lang].tabBasics}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={s.guideTabRow}>
+                <TouchableOpacity
+                  style={[s.guideTabBtn, guideTab === 'muscles' && s.guideTabBtnActive]}
+                  onPress={() => setGuideTab('muscles')}
+                >
+                  <Text style={[s.guideTabText, guideTab === 'muscles' && s.guideTabTextActive]} numberOfLines={1} adjustsFontSizeToFit>
+                    {GUIDE[lang].tabMuscles}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.guideTabBtn, guideTab === 'supplements' && s.guideTabBtnActive]}
+                  onPress={() => setGuideTab('supplements')}
+                >
+                  <Text style={[s.guideTabText, guideTab === 'supplements' && s.guideTabTextActive]} numberOfLines={1} adjustsFontSizeToFit>
+                    {GUIDE[lang].tabSupplements}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
             <ScrollView contentContainerStyle={{ paddingHorizontal: 16 }}>
               {guideTab === 'app' ? (
                 <View style={s.groupList}>
@@ -743,7 +750,8 @@ const s = StyleSheet.create({
   statLbl:           { fontSize: 10, color: '#7a85a0', fontWeight: '600', letterSpacing: 0.6, marginTop: 2 },
   sectionLabel:      { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 24, marginBottom: 12 },
   exCard:            { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 10 },
-  exThumb:           { width: 52, height: 52, borderRadius: 10, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  exThumb:           { width: 52, height: 52, borderRadius: 10, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  exThumbImg:        { width: '100%', height: '100%' },
   exName:            { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 4 },
   exMeta:            { fontSize: 12, color: '#7a85a0' },
   weightBadge:       { backgroundColor: '#2b1510', borderWidth: 1, borderColor: '#f04a18', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
@@ -806,8 +814,9 @@ const s = StyleSheet.create({
   guideModalCard:    { backgroundColor: '#141720', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingTop: 20, paddingBottom: 40, maxHeight: '85%' },
   guideModalHeader:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 14 },
   guideModalClose:   { fontSize: 20, color: '#7a85a0', padding: 4 },
-  guideTabs:         { paddingHorizontal: 16, marginBottom: 14 },
-  guideTabBtn:       { backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' },
+  guideTabs:         { paddingHorizontal: 16, marginBottom: 14, gap: 8 },
+  guideTabRow:       { flexDirection: 'row', gap: 8 },
+  guideTabBtn:       { flex: 1, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 10, alignItems: 'center' },
   guideTabBtnActive: { backgroundColor: '#f04a18', borderColor: '#f04a18' },
   guideTabText:      { fontSize: 13, fontWeight: '700', color: '#7a85a0' },
   guideTabTextActive:{ color: '#fff' },

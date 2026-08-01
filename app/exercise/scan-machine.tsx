@@ -20,6 +20,7 @@ export default function ScanMachineScreen() {
   const [step, setStep]                       = useState<Step>('machine');
   const [capturing, setCapturing]             = useState(false);
   const [machineImagePath, setMachineImagePath] = useState<string | null>(null);
+  const [nameplateImagePath, setNameplateImagePath] = useState<string | null>(null);
   const [machineName, setMachineName]         = useState('');
   const [selectedGroup, setSelectedGroup]     = useState('');
   const [confidence, setConfidence]           = useState(0);
@@ -53,6 +54,9 @@ export default function ScanMachineScreen() {
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
       if (!photo) return;
+      const dest = FileSystem.documentDirectory + `nameplate_${Date.now()}.jpg`;
+      await FileSystem.moveAsync({ from: photo.uri, to: dest });
+      setNameplateImagePath(dest);
       const ai = await readNameplateText(photo.base64 ?? '');
       if (ai.text) {
         setMachineName(ai.text);
@@ -79,11 +83,12 @@ export default function ScanMachineScreen() {
 
     const doSave = () => {
       const machine = saveMachine({
-        name:         machineName.trim(),
-        image_path:   machineImagePath,
-        city:         cityVal,
-        gym:          gymVal,
-        muscle_group: selectedGroup || null,
+        name:                 machineName.trim(),
+        image_path:           machineImagePath,
+        city:                 cityVal,
+        gym:                  gymVal,
+        muscle_group:         selectedGroup || null,
+        nameplate_image_path: nameplateImagePath,
       });
       router.push({
         pathname: '/exercise/scan-weight',
@@ -130,6 +135,7 @@ export default function ScanMachineScreen() {
   function reset() {
     setStep('machine');
     setMachineImagePath(null);
+    setNameplateImagePath(null);
     setMachineName('');
     setSelectedGroup('');
     setConfidence(0);

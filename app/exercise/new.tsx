@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addExercise } from '../../lib/database';
 import { useTranslation } from '../../lib/i18n';
@@ -67,16 +67,21 @@ export default function NewExerciseScreen() {
 
       {/* Machine section */}
       <Text style={s.sectionLabel}>{t('machine')}</Text>
-      <View style={s.inputCard}>
-        <TextInput
-          style={s.bigInput}
-          placeholder={t('enter_machine_name')}
-          placeholderTextColor="#7a85a0"
-          value={machineInput}
-          onChangeText={setMachineInput}
-        />
-        {fromRegistry && <Text style={s.sourceBadge}>📋 {t('from_registry')}</Text>}
-        {scannedMachine && <Text style={s.sourceBadge}>📷 {t('ai_identification')}</Text>}
+      <View style={[s.inputCard, s.inputCardRow]}>
+        {!!machineImagePath && (
+          <Image source={{ uri: machineImagePath }} style={s.machineThumb} />
+        )}
+        <View style={{ flex: 1 }}>
+          <TextInput
+            style={s.bigInput}
+            placeholder={t('enter_machine_name')}
+            placeholderTextColor="#7a85a0"
+            value={machineInput}
+            onChangeText={setMachineInput}
+          />
+          {fromRegistry && <Text style={s.sourceBadge}>📋 {t('from_registry')}</Text>}
+          {scannedMachine && <Text style={s.sourceBadge}>📷 {t('ai_identification')}</Text>}
+        </View>
       </View>
       <View style={s.choiceRow}>
         <TouchableOpacity
@@ -182,6 +187,8 @@ const s = StyleSheet.create({
   title:           { fontSize: 20, fontWeight: '700', color: '#dde3f0', letterSpacing: -0.4, flex: 1 },
   sectionLabel:    { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 16, marginBottom: 8, marginTop: 4 },
   inputCard:       { marginHorizontal: 16, marginBottom: 10, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16 },
+  inputCardRow:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  machineThumb:    { width: 52, height: 52, borderRadius: 10, flexShrink: 0 },
   bigInput:        { fontSize: 18, fontWeight: '600', color: '#dde3f0' },
   sourceBadge:     { fontSize: 11, color: '#1ecfa4', marginTop: 6, fontWeight: '600' },
   choiceRow:       { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 },

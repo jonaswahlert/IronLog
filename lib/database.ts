@@ -46,6 +46,7 @@ export function initDatabase() {
   try { db.execSync(`ALTER TABLE machines ADD COLUMN gym TEXT`); } catch {}
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN machine_id INTEGER REFERENCES machines(id)`); } catch {}
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN muscle_group TEXT`); } catch {}
+  try { db.execSync(`ALTER TABLE machines ADD COLUMN nameplate_image_path TEXT`); } catch {}
 }
 
 // ── Machines ──────────────────────────────────────────────
@@ -75,8 +76,8 @@ export function machineExists(name: string, city: string | null, gym: string | n
 
 export function saveMachine(data: Omit<Machine, 'id' | 'created_at'>): Machine {
   const result = db.runSync(
-    `INSERT INTO machines (name, image_path, city, gym, muscle_group) VALUES (?, ?, ?, ?, ?)`,
-    [data.name, data.image_path ?? null, data.city ?? null, data.gym ?? null, data.muscle_group ?? null]
+    `INSERT INTO machines (name, image_path, city, gym, muscle_group, nameplate_image_path) VALUES (?, ?, ?, ?, ?, ?)`,
+    [data.name, data.image_path ?? null, data.city ?? null, data.gym ?? null, data.muscle_group ?? null, data.nameplate_image_path ?? null]
   );
   return db.getFirstSync<Machine>('SELECT * FROM machines WHERE id = ?', [result.lastInsertRowId])!;
 }
@@ -314,6 +315,42 @@ export function deleteProgressPhoto(id: number): void {
   db.runSync(`DELETE FROM progress_photos WHERE id = ?`, [id]);
 }
 
+// ── Weight log ────────────────────────────────────────────
+export type WeightEntry = {
+  id: number;
+  weight_kg: number;
+  logged_at: string;
+  created_at: string;
+};
+
+function ensureWeightLogTable(): void {
+  db.execSync(`CREATE TABLE IF NOT EXISTS weight_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    weight_kg  REAL NOT NULL,
+    logged_at  TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`);
+}
+
+export function addWeightEntry(weightKg: number, loggedAt: string): WeightEntry {
+  ensureWeightLogTable();
+  const result = db.runSync(
+    `INSERT INTO weight_log (weight_kg, logged_at) VALUES (?, ?)`,
+    [weightKg, loggedAt]
+  );
+  return db.getFirstSync<WeightEntry>(`SELECT * FROM weight_log WHERE id = ?`, [result.lastInsertRowId])!;
+}
+
+export function getWeightHistory(): WeightEntry[] {
+  ensureWeightLogTable();
+  return db.getAllSync<WeightEntry>(`SELECT * FROM weight_log ORDER BY logged_at DESC, id DESC`);
+}
+
+export function deleteWeightEntry(id: number): void {
+  ensureWeightLogTable();
+  db.runSync(`DELETE FROM weight_log WHERE id = ?`, [id]);
+}
+
 // ── Saved programs ────────────────────────────────────────
 export type SavedProgram = {
   id: number;
@@ -395,6 +432,7 @@ export type Machine = {
   city: string | null;
   gym: string | null;
   muscle_group: string | null;
+  nameplate_image_path: string | null;
   created_at: string;
 };
 

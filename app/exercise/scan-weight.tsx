@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, TextInput,
+  View, Text, TouchableOpacity, TextInput, Image,
   StyleSheet, ActivityIndicator, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
@@ -86,6 +86,15 @@ export default function ScanWeightScreen() {
             </TouchableOpacity>
           </View>
 
+          {!!params.machineType && (
+            <View style={s.machineContext}>
+              {!!params.machineImagePath && (
+                <Image source={{ uri: params.machineImagePath }} style={s.machineContextImg} />
+              )}
+              <Text style={s.machineContextText} numberOfLines={1}>{params.machineType}</Text>
+            </View>
+          )}
+
           <View style={s.formHeader}>
             <View style={s.dot} />
             <Text style={s.resultHeaderText}>
@@ -150,6 +159,15 @@ export default function ScanWeightScreen() {
         </TouchableOpacity>
       </View>
 
+      {!!params.machineType && (
+        <View style={s.machineContextOverlay}>
+          {!!params.machineImagePath && (
+            <Image source={{ uri: params.machineImagePath }} style={s.machineContextImg} />
+          )}
+          <Text style={s.machineContextText} numberOfLines={1}>{params.machineType}</Text>
+        </View>
+      )}
+
       {hasResult ? null : (
         <View style={s.bottomBar}>
           {scanning
@@ -192,6 +210,10 @@ const s = StyleSheet.create({
   cornerBR:         { top: undefined, bottom: '45%', left: undefined, right: '15%', borderTopWidth: 0, borderBottomWidth: 3, borderLeftWidth: 0, borderRightWidth: 3 },
   topBar:           { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 24, paddingTop: 60 },
   closeBtn:         { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+  machineContextOverlay: { position: 'absolute', top: 128, left: 24, right: 24, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 12, padding: 8 },
+  machineContext:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 12, padding: 8, marginBottom: 16 },
+  machineContextImg: { width: 36, height: 36, borderRadius: 8 },
+  machineContextText: { color: '#dde3f0', fontSize: 13, fontWeight: '600', flexShrink: 1 },
   closeText:        { color: '#fff', fontSize: 16 },
   topTitle:         { fontSize: 18, fontWeight: '700', color: '#fff' },
   bottomBar:        { position: 'absolute', bottom: 0, left: 0, right: 0, alignItems: 'center', paddingBottom: 48, gap: 12 },

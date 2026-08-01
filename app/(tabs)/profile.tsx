@@ -1,12 +1,15 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput, Image,
-  StyleSheet, Alert, KeyboardAvoidingView, Platform,
+  StyleSheet, Alert, Modal, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { router, useFocusEffect } from 'expo-router';
-import { getProfile, saveProfile, Profile } from '../../lib/database';
+import {
+  getProfile, saveProfile, Profile,
+  addWeightEntry, getWeightHistory, deleteWeightEntry, WeightEntry,
+} from '../../lib/database';
 import { useLang } from '../../lib/LanguageContext';
 import { LanguageToggle } from '../../components/LanguageToggle';
 
@@ -22,6 +25,9 @@ export default function ProfileScreen() {
   const [goal, setGoal]         = useState('');
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
   const [saving, setSaving]     = useState(false);
+  const [weightHistory, setWeightHistory] = useState<WeightEntry[]>([]);
+  const [logWeightOpen, setLogWeightOpen] = useState(false);
+  const [newWeightInput, setNewWeightInput] = useState('');
 
   useFocusEffect(useCallback(() => {
     const p = getProfile();
@@ -32,6 +38,7 @@ export default function ProfileScreen() {
     setWeight(p?.weight_kg ? String(p.weight_kg) : '');
     setGoal(p?.goal ?? '');
     setAvatarPath(p?.avatar_path ?? null);
+    setWeightHistory(getWeightHistory());
   }, []));
 
   async function pickAvatar() {
@@ -61,6 +68,36 @@ export default function ProfileScreen() {
     const dest = FileSystem.documentDirectory + `avatar_${Date.now()}.jpg`;
     await FileSystem.copyAsync({ from: result.assets[0].uri, to: dest });
     setAvatarPath(dest);
+  }
+
+  function openLogWeight() {
+    setNewWeightInput(weightHistory[0] ? String(weightHistory[0].weight_kg) : weight);
+    setLogWeightOpen(true);
+  }
+
+  function logWeight() {
+    const kg = parseFloat(newWeightInput);
+    if (!kg) return;
+    const today = new Date().toISOString().split('T')[0];
+    addWeightEntry(kg, today);
+    saveProfile({ weight_kg: kg });
+    setWeight(String(kg));
+    setWeightHistory(getWeightHistory());
+    setLogWeightOpen(false);
+  }
+
+  function confirmDeleteWeight(id: number) {
+    Alert.alert(
+      lang === 'sv' ? 'Radera post' : 'Delete entry',
+      lang === 'sv' ? 'Kan inte ångras.' : 'This cannot be undone.',
+      [
+        { text: lang === 'sv' ? 'Avbryt' : 'Cancel', style: 'cancel' },
+        { text: lang === 'sv' ? 'Radera' : 'Delete', style: 'destructive', onPress: () => {
+          deleteWeightEntry(id);
+          setWeightHistory(getWeightHistory());
+        } },
+      ]
+    );
   }
 
   function save() {
@@ -145,6 +182,40 @@ export default function ProfileScreen() {
         <Text style={s.saveBtnText}>{saving ? (lang === 'sv' ? 'Sparar...' : 'Saving...') : (lang === 'sv' ? '✓ Spara' : '✓ Save')}</Text>
       </TouchableOpacity>
 
+      <View style={s.weightHeaderRow}>
+        <Text style={s.sectionLabel}>{lang === 'sv' ? 'VIKTUTVECKLING' : 'WEIGHT PROGRESS'}</Text>
+        <TouchableOpacity style={s.logWeightBtn} onPress={openLogWeight}>
+          <Text style={s.logWeightBtnText}>+ {lang === 'sv' ? 'Logga ny vikt' : 'Log new weight'}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {weightHistory.length === 0 ? (
+        <Text style={s.weightEmpty}>
+          {lang === 'sv' ? 'Ingen vikt loggad ännu.' : 'No weight logged yet.'}
+        </Text>
+      ) : (
+        <View style={s.weightList}>
+          {weightHistory.map((entry, i) => {
+            const prev = weightHistory[i + 1];
+            const delta = prev ? entry.weight_kg - prev.weight_kg : null;
+            return (
+              <View key={entry.id} style={s.weightRow}>
+                <Text style={s.weightDate}>{entry.logged_at}</Text>
+                <Text style={s.weightValue}>{entry.weight_kg} kg</Text>
+                {delta !== null && delta !== 0 && (
+                  <Text style={[s.weightDelta, { color: delta > 0 ? ACCENT : '#1ecfa4' }]}>
+                    {delta > 0 ? '+' : ''}{delta.toFixed(1)} kg
+                  </Text>
+                )}
+                <TouchableOpacity style={s.weightDeleteBtn} onPress={() => confirmDeleteWeight(entry.id)}>
+                  <Text style={s.weightDeleteText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       <TouchableOpacity style={s.progressCard} onPress={() => router.push('/progress-photos')}>
         <View style={{ flex: 1 }}>
           <Text style={s.progressTitle}>📸  {lang === 'sv' ? 'Progressbilder' : 'Progress photos'}</Text>
@@ -155,6 +226,32 @@ export default function ProfileScreen() {
         <Text style={s.progressArrow}>→</Text>
       </TouchableOpacity>
     </ScrollView>
+
+    <Modal visible={logWeightOpen} transparent animationType="slide">
+      <View style={s.modalOverlay}>
+        <View style={s.modalCard}>
+          <Text style={s.modalTitle}>{lang === 'sv' ? 'Logga ny vikt' : 'Log new weight'}</Text>
+          <Text style={s.sectionLabel}>{lang === 'sv' ? 'VIKT (KG)' : 'WEIGHT (KG)'}</Text>
+          <View style={s.inputCard}>
+            <TextInput
+              style={[s.input, { fontSize: 24, fontWeight: '800' }]}
+              placeholder="0"
+              placeholderTextColor="#7a85a0"
+              value={newWeightInput}
+              onChangeText={setNewWeightInput}
+              keyboardType="decimal-pad"
+              autoFocus
+            />
+          </View>
+          <TouchableOpacity style={s.saveBtn} onPress={logWeight} disabled={!newWeightInput.trim()}>
+            <Text style={s.saveBtnText}>{lang === 'sv' ? '✓ Spara' : '✓ Save'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.modalCancelBtn} onPress={() => setLogWeightOpen(false)}>
+            <Text style={s.modalCancelText}>{lang === 'sv' ? 'Avbryt' : 'Cancel'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -179,4 +276,20 @@ const s = StyleSheet.create({
   progressTitle:      { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 4 },
   progressSub:        { fontSize: 12, color: '#7a85a0', lineHeight: 17 },
   progressArrow:      { fontSize: 20, color: '#7a85a0', marginLeft: 8 },
+  weightHeaderRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 4 },
+  logWeightBtn:       { backgroundColor: ACCENT, borderRadius: 100, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 8 },
+  logWeightBtnText:   { color: '#fff', fontSize: 12, fontWeight: '700' },
+  weightEmpty:        { fontSize: 13, color: '#7a85a0', paddingHorizontal: 16, marginBottom: 16 },
+  weightList:         { marginHorizontal: 16, marginBottom: 16, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, overflow: 'hidden' },
+  weightRow:          { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#22273a' },
+  weightDate:         { fontSize: 12, color: '#7a85a0', flex: 1 },
+  weightValue:        { fontSize: 14, fontWeight: '700', color: '#dde3f0' },
+  weightDelta:        { fontSize: 12, fontWeight: '700', minWidth: 56, textAlign: 'right' },
+  weightDeleteBtn:     { width: 22, height: 22, borderRadius: 11, backgroundColor: '#2a1010', alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
+  weightDeleteText:   { color: ACCENT, fontSize: 11, fontWeight: '700' },
+  modalOverlay:       { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalCard:          { backgroundColor: '#141720', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28, paddingBottom: 48 },
+  modalTitle:         { fontSize: 20, fontWeight: '800', color: '#dde3f0', marginBottom: 16 },
+  modalCancelBtn:     { alignItems: 'center', padding: 8 },
+  modalCancelText:    { color: '#7a85a0', fontSize: 14 },
 });

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Modal, Alert, KeyboardAvoidingView, Platform,
+  StyleSheet, Modal, Alert, Image, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import {
@@ -126,7 +126,10 @@ export default function SessionDetailScreen() {
       {exercises.map(ex => (
         <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
           <View style={s.exThumb}>
-            <Text style={{ fontSize: 22 }}>🏋️</Text>
+            {ex.machine_image_path
+              ? <Image source={{ uri: ex.machine_image_path }} style={s.exThumbImg} />
+              : <Text style={{ fontSize: 22 }}>🏋️</Text>
+            }
           </View>
           <View style={{ flex: 1 }}>
             <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? t('unknown_machine')}</Text>
@@ -282,7 +285,8 @@ const s = StyleSheet.create({
   sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#7a85a0', paddingHorizontal: 24, marginBottom: 12 },
   empty:        { fontSize: 14, color: '#7a85a0', paddingHorizontal: 24 },
   exCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 10 },
-  exThumb:      { width: 52, height: 52, borderRadius: 10, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  exThumb:      { width: 52, height: 52, borderRadius: 10, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  exThumbImg:   { width: '100%', height: '100%' },
   exName:       { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 4 },
   exMeta:       { fontSize: 12, color: '#7a85a0' },
   weightBadge:  { backgroundColor: '#2b1510', borderWidth: 1, borderColor: '#f04a18', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
