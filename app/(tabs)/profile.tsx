@@ -229,7 +229,7 @@ export default function ProfileScreen() {
     </ScrollView>
 
     <Modal visible={logWeightOpen} transparent animationType="slide">
-      <View style={s.modalOverlay}>
+      <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={s.modalCard}>
           <Text style={s.modalTitle}>{lang === 'sv' ? 'Logga ny vikt' : 'Log new weight'}</Text>
           <Text style={s.sectionLabel}>{lang === 'sv' ? 'VIKT (KG)' : 'WEIGHT (KG)'}</Text>
@@ -251,7 +251,7 @@ export default function ProfileScreen() {
             <Text style={s.modalCancelText}>{lang === 'sv' ? 'Avbryt' : 'Cancel'}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
     </KeyboardAvoidingView>
   );
