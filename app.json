@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "se.jonaswahlert.ironlog",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "infoPlist": {
         "NSCameraUsageDescription": "IronLog använder kameran för att fotografera maskiner och vikter.",
         "NSPhotoLibraryUsageDescription": "IronLog läser bilder från ditt bibliotek.",
