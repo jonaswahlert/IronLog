@@ -57,8 +57,8 @@ const GUIDE = {
       { step: '2', h: 'Lägg till övning',         p: 'Tryck "+ Lägg till övning" för varje maskin du tränar på.' },
       { step: '3', h: 'Ny maskin? Skanna den',     p: 'Bara första gången du tränar på en maskin: fota den → AI identifierar den automatiskt och sparar den i ditt register.' },
       { step: '4', h: 'Tränat här förut? Välj i listan', p: 'Nästa gång du tränar på samma maskin: välj den bara i din sparade lista — ingen ny skanning behövs.' },
-      { step: '5', h: 'Konditionsmaskin?',          p: 'Löpband, cykel, trappmaskin m.fl. loggas annorlunda: träna klart först — fota sedan displayen, så läser AI:n av distans, tid, puls, kalorier m.m. automatiskt. Inga sets/reps här.' },
-      { step: '6', h: 'Registrera vikt',           p: 'Vid styrketräning: fota viktplattan eller ange kg manuellt.' },
+      { step: '5', h: 'Konditionsmaskin?',          p: 'Löpband, cykel, trappmaskin m.fl. loggas annorlunda: ange distans, tid, puls, kalorier m.m. manuellt efter passet. Inga sets/reps här.' },
+      { step: '6', h: 'Registrera vikt',           p: 'Vid styrketräning: ange vikt i kg manuellt.' },
       { step: '7', h: 'Spara & upprepa',           p: 'Kontrollera set/reps, tryck Spara. Upprepa för varje maskin i passet.' },
       { step: '8', h: 'Avsluta pass',              p: 'Tryck "Avsluta pass" när träningen är klar.' },
     ],
@@ -108,8 +108,8 @@ const GUIDE = {
       { step: '2', h: 'Add exercise',              p: 'Tap "+ Add exercise" for each machine you train on.' },
       { step: '3', h: 'New machine? Scan it',      p: 'Only the first time you use a machine: photograph it → AI identifies it automatically and saves it to your registry.' },
       { step: '4', h: 'Used it before? Pick it',   p: 'Next time on the same machine: just select it from your saved list — no need to scan again.' },
-      { step: '5', h: 'Cardio machine?',           p: 'Treadmill, bike, stair climber etc. are logged differently: finish your workout first, then photograph the display — AI reads distance, time, heart rate, calories, etc. automatically. No sets/reps here.' },
-      { step: '6', h: 'Log weight',                p: 'For strength training: photograph the weight plate or enter kg manually.' },
+      { step: '5', h: 'Cardio machine?',           p: 'Treadmill, bike, stair climber etc. are logged differently: enter distance, time, heart rate, calories, etc. manually after your workout. No sets/reps here.' },
+      { step: '6', h: 'Log weight',                p: 'For strength training: enter the weight in kg manually.' },
       { step: '7', h: 'Save & repeat',              p: 'Check sets/reps, tap Save. Repeat for each machine in the session.' },
       { step: '8', h: 'Finish session',            p: 'Tap "End session" when you are done training.' },
     ],
@@ -660,6 +660,7 @@ export default function SessionScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
               style={{ marginBottom: 12 }}
             >
@@ -788,7 +789,7 @@ export default function SessionScreen() {
             )}
 
             <Text style={s.fieldLabel}>{t('muscle_group')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
               {MUSCLE_GROUPS.map(g => (
                 <TouchableOpacity key={g} style={[s.gymChip, editGroup === g && s.gymChipActive]} onPress={() => setEditGroup(g)}>
                   <Text style={[s.gymChipText, editGroup === g && s.gymChipTextActive]}>{g}</Text>

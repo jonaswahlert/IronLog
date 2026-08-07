@@ -28,21 +28,6 @@ export default function SelectMachineScreen() {
   }, [sessionCity]));
 
   function selectMachine(machine: Machine) {
-    if (machine.muscle_group === 'Cardio') {
-      router.push({
-        pathname: '/exercise/scan-cardio',
-        params: {
-          sessionId,
-          city:              sessionCity ?? '',
-          gym:               sessionGym  ?? '',
-          machineId:         String(machine.id),
-          machineType:       machine.name,
-          machineImagePath:  machine.image_path ?? '',
-          machineConfidence: '100',
-        },
-      });
-      return;
-    }
     const last = getLastExerciseForMachine(machine.id);
     router.push({
       pathname: '/exercise/new',
@@ -56,7 +41,6 @@ export default function SelectMachineScreen() {
         machineConfidence: '100',
         muscleGroup:       machine.muscle_group ?? '',
         weightKg:          last?.weight_kg ? String(last.weight_kg) : '',
-        weightConfidence:  last?.weight_confidence ? String(last.weight_confidence) : '',
         defaultSets:       last?.sets ? String(last.sets) : '3',
         defaultReps:       last?.reps ? String(last.reps) : '10',
       },
@@ -104,7 +88,7 @@ export default function SelectMachineScreen() {
 
       {/* City filter */}
       {cities.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           <TouchableOpacity style={[s.chip, !activeCity && s.chipActive]} onPress={() => { setActiveCity(null); setActiveGroup(null); }}>
             <Text style={[s.chipText, !activeCity && s.chipTextActive]}>{t('all_cities')}</Text>
           </TouchableOpacity>
@@ -118,7 +102,7 @@ export default function SelectMachineScreen() {
 
       {/* Muscle group filter */}
       {availableGroups.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           <TouchableOpacity style={[s.chip, !activeGroup && s.chipGroupActive]} onPress={() => setActiveGroup(null)}>
             <Text style={[s.chipText, !activeGroup && s.chipTextActive]}>Alla grupper</Text>
           </TouchableOpacity>
@@ -143,7 +127,7 @@ export default function SelectMachineScreen() {
               <TouchableOpacity key={machine.id} style={s.machineCard} onPress={() => selectMachine(machine)}>
                 <View style={s.machineImgWrap}>
                   {machine.image_path
-                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="cover" />
+                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="contain" />
                     : <Text style={{ fontSize: 48 }}>🏋️</Text>
                   }
                 </View>

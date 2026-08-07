@@ -131,7 +131,7 @@ export default function MachinesScreen() {
 
       {/* City filter */}
       {cities.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           <TouchableOpacity style={[s.chip, !activeCity && s.chipActive]} onPress={() => { setActiveCity(null); setActiveGroup(null); }}>
             <Text style={[s.chipText, !activeCity && s.chipTextActive]}>{t('all_cities')}</Text>
           </TouchableOpacity>
@@ -145,7 +145,7 @@ export default function MachinesScreen() {
 
       {/* Muscle group filter */}
       {availableGroups.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           <TouchableOpacity style={[s.chip, !activeGroup && s.chipGroupActive]} onPress={() => setActiveGroup(null)}>
             <Text style={[s.chipText, !activeGroup && s.chipTextActive]}>Alla grupper</Text>
           </TouchableOpacity>
@@ -172,7 +172,7 @@ export default function MachinesScreen() {
             <View key={machine.id} style={s.machineCard}>
               <View style={s.machineImgWrap}>
                 {machine.image_path
-                  ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="cover" />
+                  ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="contain" />
                   : <Text style={{ fontSize: 48 }}>🏋️</Text>
                 }
               </View>
@@ -212,7 +212,7 @@ export default function MachinesScreen() {
             />
 
             <Text style={s.fieldLabel}>{t('muscle_group')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
               {MUSCLE_GROUPS.map(g => (
                 <TouchableOpacity key={g} style={[s.groupChip, editGroup === g && s.groupChipActive]} onPress={() => setEditGroup(g)}>
                   <Text style={[s.groupChipText, editGroup === g && s.groupChipTextActive]}>{g}</Text>
@@ -230,7 +230,7 @@ export default function MachinesScreen() {
             />
 
             <Text style={s.fieldLabel}>GYM (VALFRITT)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }} style={{ marginBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 4 }} style={{ marginBottom: 12 }}>
               {GYM_CHAINS.map(name => (
                 <TouchableOpacity
                   key={name}

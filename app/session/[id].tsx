@@ -195,7 +195,7 @@ export default function SessionDetailScreen() {
             />
 
             <Text style={s.fieldLabel}>GYM (VALFRITT)</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }} style={{ marginBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 4 }} style={{ marginBottom: 12 }}>
               {GYM_CHAINS.map(name => (
                 <TouchableOpacity
                   key={name}
@@ -322,7 +322,7 @@ export default function SessionDetailScreen() {
             )}
 
             <Text style={s.fieldLabel}>{t('muscle_group')}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
               {MUSCLE_GROUPS.map(g => (
                 <TouchableOpacity key={g} style={[s.chip, editGroup === g && s.chipActive]} onPress={() => setEditGroup(g)}>
                   <Text style={[s.chipText, editGroup === g && s.chipTextActive]}>{g}</Text>

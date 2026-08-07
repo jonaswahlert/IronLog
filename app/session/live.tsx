@@ -8,7 +8,16 @@ import { addExercise, endSession, getMachineImageByName } from '../../lib/databa
 import { ProgramExercise } from '../../lib/claude';
 import { resolveImagePath } from '../../lib/imagePaths';
 
-type ExState = { weight: string; sets: string; reps: string; saved: boolean };
+type ExState = { weight: string; sets: string; reps: string; distance: string; duration: string; heartRate: string; saved: boolean };
+
+function isCardioEx(ex: ProgramExercise): boolean {
+  return ex.reps.includes('min');
+}
+
+function parseMinutes(reps: string): string {
+  const m = reps.match(/(\d+)/);
+  return m ? m[1] : '';
+}
 
 // ── Muscle visual helpers ──────────────────────────────────────
 const MUSCLE_MAP: { keywords: string[]; color: string; bg: string; icon: string; label: string }[] = [
@@ -79,7 +88,11 @@ export default function LiveSessionScreen() {
   const sid = parseInt(sessionId ?? '0');
 
   const [states, setStates] = useState<ExState[]>(() =>
-    exercises.map(ex => ({ weight: '', sets: String(ex.sets), reps: String(ex.reps), saved: false }))
+    exercises.map(ex => ({
+      weight: '', sets: String(ex.sets), reps: String(ex.reps),
+      distance: '', duration: isCardioEx(ex) ? parseMinutes(ex.reps) : '', heartRate: '',
+      saved: false,
+    }))
   );
   const [images, setImages] = useState<(string | null)[]>([]);
 
@@ -95,21 +108,41 @@ export default function LiveSessionScreen() {
     const st = states[i];
     const ex = exercises[i];
     if (!st || !ex) return;
-    const muscleLabel = getMuscleVisual(ex.name, muscles).label;
-    addExercise({
-      session_id:          sid,
-      machine_id:          null,
-      machine_type:        ex.name,
-      machine_confidence:  null,
-      machine_image_path:  images[i] ?? null,
-      muscle_group:        muscleLabel !== 'Övning' ? muscleLabel : (muscles || null),
-      weight_kg:           parseFloat(st.weight) || null,
-      weight_confidence:   null,
-      weight_image_path:   null,
-      sets:                parseInt(st.sets) || null,
-      reps:                parseInt(st.reps) || null,
-      notes:               null,
-    });
+    if (isCardioEx(ex)) {
+      addExercise({
+        session_id:          sid,
+        machine_id:          null,
+        machine_type:        ex.name,
+        machine_confidence:  null,
+        machine_image_path:  images[i] ?? null,
+        muscle_group:        'Cardio',
+        weight_kg:           null,
+        weight_confidence:   null,
+        weight_image_path:   null,
+        sets:                null,
+        reps:                null,
+        notes:               null,
+        distance_km:         st.distance.trim()  ? parseFloat(st.distance)  : null,
+        duration_min:        st.duration.trim()  ? parseFloat(st.duration)  : null,
+        avg_heart_rate:      st.heartRate.trim() ? parseInt(st.heartRate)   : null,
+      });
+    } else {
+      const muscleLabel = getMuscleVisual(ex.name, muscles).label;
+      addExercise({
+        session_id:          sid,
+        machine_id:          null,
+        machine_type:        ex.name,
+        machine_confidence:  null,
+        machine_image_path:  images[i] ?? null,
+        muscle_group:        muscleLabel !== 'Övning' ? muscleLabel : (muscles || null),
+        weight_kg:           parseFloat(st.weight) || null,
+        weight_confidence:   null,
+        weight_image_path:   null,
+        sets:                parseInt(st.sets) || null,
+        reps:                parseInt(st.reps) || null,
+        notes:               null,
+      });
+    }
     update(i, 'saved', true);
   }
 
@@ -177,7 +210,9 @@ export default function LiveSessionScreen() {
                       </View>
                       <Text style={[s.exName, st.saved && s.exNameDone]} numberOfLines={2}>{ex.name}</Text>
                     </View>
-                    <Text style={s.exTarget}>{ex.sets} set × {ex.reps} reps  ·  {ex.restSec}s vila</Text>
+                    <Text style={s.exTarget}>
+                      {isCardioEx(ex) ? `≈ ${ex.reps}` : `${ex.sets} set × ${ex.reps} reps  ·  ${ex.restSec}s vila`}
+                    </Text>
                     <View style={[s.muscleTag, { backgroundColor: v.bg, borderColor: v.color + '55' }]}>
                       <Text style={[s.muscleTagText, { color: v.color }]}>{v.label}</Text>
                     </View>
@@ -187,41 +222,79 @@ export default function LiveSessionScreen() {
                 {!!ex.tip && <Text style={s.tip}>💡 {ex.tip}</Text>}
 
                 {/* Inputs */}
-                <View style={s.inputsRow}>
-                  <View style={s.inputGroup}>
-                    <Text style={s.inputLabel}>VIKT (kg)</Text>
-                    <TextInput
-                      style={s.input}
-                      value={st.weight}
-                      onChangeText={v => update(i, 'weight', v)}
-                      keyboardType="decimal-pad"
-                      placeholder="0"
-                      placeholderTextColor="#3c4560"
-                    />
+                {isCardioEx(ex) ? (
+                  <View style={s.inputsRow}>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>TID (MIN)</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.duration}
+                        onChangeText={v => update(i, 'duration', v)}
+                        keyboardType="decimal-pad"
+                        placeholder="—"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>DISTANS (KM)</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.distance}
+                        onChangeText={v => update(i, 'distance', v)}
+                        keyboardType="decimal-pad"
+                        placeholder="—"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>PULS</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.heartRate}
+                        onChangeText={v => update(i, 'heartRate', v)}
+                        keyboardType="number-pad"
+                        placeholder="—"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
                   </View>
-                  <View style={s.inputGroup}>
-                    <Text style={s.inputLabel}>SET</Text>
-                    <TextInput
-                      style={s.input}
-                      value={st.sets}
-                      onChangeText={v => update(i, 'sets', v)}
-                      keyboardType="number-pad"
-                      placeholder="3"
-                      placeholderTextColor="#3c4560"
-                    />
+                ) : (
+                  <View style={s.inputsRow}>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>VIKT (kg)</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.weight}
+                        onChangeText={v => update(i, 'weight', v)}
+                        keyboardType="decimal-pad"
+                        placeholder="0"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>SET</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.sets}
+                        onChangeText={v => update(i, 'sets', v)}
+                        keyboardType="number-pad"
+                        placeholder="3"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
+                    <View style={s.inputGroup}>
+                      <Text style={s.inputLabel}>REPS</Text>
+                      <TextInput
+                        style={s.input}
+                        value={st.reps}
+                        onChangeText={v => update(i, 'reps', v)}
+                        keyboardType="number-pad"
+                        placeholder="10"
+                        placeholderTextColor="#3c4560"
+                      />
+                    </View>
                   </View>
-                  <View style={s.inputGroup}>
-                    <Text style={s.inputLabel}>REPS</Text>
-                    <TextInput
-                      style={s.input}
-                      value={st.reps}
-                      onChangeText={v => update(i, 'reps', v)}
-                      keyboardType="number-pad"
-                      placeholder="10"
-                      placeholderTextColor="#3c4560"
-                    />
-                  </View>
-                </View>
+                )}
 
                 <TouchableOpacity
                   style={[s.saveBtn, st.saved && s.saveBtnDone]}

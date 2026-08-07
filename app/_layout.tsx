@@ -17,8 +17,6 @@ export default function RootLayout() {
         <Stack.Screen name="exercise/new" options={{ presentation: 'modal' }} />
         <Stack.Screen name="exercise/select-machine" options={{ presentation: 'modal' }} />
         <Stack.Screen name="exercise/scan-machine" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="exercise/scan-weight" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="exercise/scan-cardio" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="session/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="progress-photos" />
       </Stack>

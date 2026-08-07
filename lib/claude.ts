@@ -82,11 +82,7 @@ export async function generateProgram(params: {
 }): Promise<{ days: ProgramDay[]; error?: string }> {
   const { goal, daysPerWeek, minutesPerSession, machines, language } = params;
   const numEx = minutesPerSession <= 30 ? '3-4' : minutesPerSession <= 45 ? '4-5' : minutesPerSession <= 60 ? '5-6' : '6-8';
-  const machineList = machines.length > 0
-    ? machines.slice(0, 20).join(', ')
-    : language === 'sv'
-      ? 'Bröstpress, Lat-drag, Benpress, Axelpress, Kabeldrag, Benextension, Höfttryck, Löpband, Motionscykel'
-      : 'Chest Press, Lat Pulldown, Leg Press, Shoulder Press, Cable Row, Leg Extension, Hip Thrust, Treadmill, Stationary Bike';
+  const machineList = machines.slice(0, 40).join(', ');
 
   const prompt = language === 'sv'
     ? `Du är en personlig tränare. Skapa ett träningsprogram.
@@ -94,23 +90,25 @@ export async function generateProgram(params: {
 Mål: ${goal}
 Pass per vecka: ${daysPerWeek}
 Tid per pass: ${minutesPerSession} minuter
-Tillgängliga maskiner: ${machineList}
+
+Detta är de ENDA maskiner/övningar som finns tillgängliga (redan registrerade av användaren): ${machineList}
 
 Svara BARA med JSON, ingen markdown, ingen förklaring:
 {"days":[{"dayNumber":1,"name":"Måndag","isRest":false,"type":"Tryckmuskler","muscles":"Bröst · Axlar · Baksida arm","exercises":[{"name":"Bröstpress","sets":3,"reps":"10-12","restSec":90,"tip":"Håll rygg mot sitsen"}]},{"dayNumber":2,"name":"Tisdag","isRest":true,"type":"Vila","muscles":"","exercises":[]}]}
 
-Regler: exakt 7 dagar, ${daysPerWeek} träningsdagar fördelade jämnt, ${numEx} övningar per pass, övningsnamn på svenska, tryck/drag/ben-uppdelning.`
+Regler: exakt 7 dagar, ${daysPerWeek} träningsdagar fördelade jämnt, ${numEx} övningar per pass, tryck/drag/ben-uppdelning. VIKTIGT: använd ENDAST övningsnamn som finns exakt i listan ovan, skriv namnet exakt som det står — hitta inte på nya övningar och byt inte namn på dem. Om listan har färre övningar än vad som behövs, återanvänd samma övningar på flera pass eller dagar istället för att hitta på nya.`
     : `You are a personal trainer. Create a training program.
 
 Goal: ${goal}
 Sessions per week: ${daysPerWeek}
 Time per session: ${minutesPerSession} minutes
-Available machines: ${machineList}
+
+These are the ONLY machines/exercises available (already registered by the user): ${machineList}
 
 Respond ONLY with JSON, no markdown, no explanation:
 {"days":[{"dayNumber":1,"name":"Monday","isRest":false,"type":"Push muscles","muscles":"Chest · Shoulders · Triceps","exercises":[{"name":"Chest Press","sets":3,"reps":"10-12","restSec":90,"tip":"Keep back against pad"}]},{"dayNumber":2,"name":"Tuesday","isRest":true,"type":"Rest","muscles":"","exercises":[]}]}
 
-Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exercises per session, push/pull/legs split.`;
+Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exercises per session, push/pull/legs split. IMPORTANT: use ONLY exercise names that appear exactly in the list above, spelled exactly as given — do not invent new exercises or rename them. If the list has fewer exercises than needed, reuse the same ones across multiple sessions/days instead of making up new ones.`;
 
   try {
     const res = await fetch(GEMINI_BASE, {
@@ -135,47 +133,6 @@ Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exer
   } catch (e: any) {
     return { days: [], error: e?.message ?? 'Network error' };
   }
-}
-
-export async function readWeightFromImage(base64: string): Promise<{ weight_kg: number; confidence: number; label: string; error?: string }> {
-  const text = await geminiVision(base64,
-    'Look at this gym weight setting. Two cases:\n1. Weight STACK (pin selector): find the pin/clip/selector and read the kg value shown. If both kg and lbs, use kg.\n2. Loose PLATES on a bar or machine: count and sum all visible plates. Color coding: grey=5kg, green=10kg, yellow=15kg, blue=20kg, red=25kg. Sum both sides.\nRespond with ONLY a JSON object:\n{"weight_kg":45,"confidence":90,"label":"Weight stack · Pin"}\nor\n{"weight_kg":60,"confidence":85,"label":"Plates · 2×blue + 2×green"}'
-  );
-  if (text.startsWith('__ERROR__:')) {
-    return { weight_kg: 0, confidence: 0, label: '', error: text.slice(10).trim() };
-  }
-  const match = text.match(/\{[\s\S]*?\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch {}
-  }
-  return { weight_kg: 0, confidence: 0, label: '' };
-}
-
-// ── Cardio machine display reading ────────────────────────
-export type CardioReading = {
-  distance_km?: number;
-  duration_min?: number;
-  avg_speed_kmh?: number;
-  avg_heart_rate?: number;
-  calories?: number;
-  floors_climbed?: number;
-  incline_pct?: number;
-  confidence: number;
-  error?: string;
-};
-
-export async function readCardioDisplay(base64: string): Promise<CardioReading> {
-  const text = await geminiVision(base64,
-    'Look at this cardio machine\'s console/display (treadmill, stair climber, exercise bike, elliptical, rowing machine, etc.), photographed right after finishing a workout. Read whichever of these values are actually visible on the display — leave out any field that is not shown, do not guess:\n- distance_km (total distance in km; convert from miles if shown as mi)\n- duration_min (elapsed workout time in minutes)\n- avg_speed_kmh (average speed/pace in km/h; convert from mph if shown)\n- avg_heart_rate (average or current heart rate in bpm)\n- calories (calories burned)\n- floors_climbed (floors or flights climbed — stair machines only)\n- incline_pct (incline percentage or resistance/level shown)\nRespond with ONLY a JSON object containing just the fields that are actually visible on the display, plus a confidence 0-100 for how clearly the display could be read:\n{"distance_km":5.2,"duration_min":30,"avg_heart_rate":142,"calories":310,"confidence":85}'
-  );
-  if (text.startsWith('__ERROR__:')) {
-    return { confidence: 0, error: text.slice(10).trim() };
-  }
-  const match = text.match(/\{[\s\S]*?\}/);
-  if (match) {
-    try { return JSON.parse(match[0]); } catch {}
-  }
-  return { confidence: 0 };
 }
 
 // ── Body progress comparison (two photos) ─────────────────

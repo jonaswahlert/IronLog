@@ -3,17 +3,47 @@ import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, router } from 'expo-router';
 import { useLang } from '../../lib/LanguageContext';
 import { LanguageToggle } from '../../components/LanguageToggle';
 import {
   getAllMachines, getAllPrograms, getActiveProgram,
   createProgram, setActiveProgram, deleteProgramById,
-  renameProgramById, SavedProgram,
+  renameProgramById, SavedProgram, Machine,
 } from '../../lib/database';
-import { generateProgram, ProgramDay } from '../../lib/claude';
+import { generateProgram, ProgramDay, ProgramExercise } from '../../lib/claude';
 
-type ViewState = 'list' | 'wizard' | 'loading' | 'name' | 'detail';
+type ViewState = 'list' | 'wizard' | 'loading' | 'name' | 'detail' | 'manualTimeChoice' | 'manualBudgetPick' | 'manualBuild';
+
+type ManualExercise = {
+  machineId: number;
+  name: string;
+  muscleGroup: string | null;
+  sets: number;
+  estMin: number;
+};
+
+function estimateMinutes(muscleGroup: string | null, sets: number): number {
+  if (muscleGroup === 'Cardio') return 15;
+  return Math.round(sets * 2.5);
+}
+
+const WEEKDAYS = {
+  sv: ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'],
+  en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+};
+
+const DAY_SPREAD: Record<number, number[]> = {
+  1: [0],
+  2: [0, 3],
+  3: [0, 2, 4],
+  4: [0, 1, 3, 4],
+  5: [0, 1, 2, 3, 4],
+  6: [0, 1, 2, 3, 4, 5],
+  7: [0, 1, 2, 3, 4, 5, 6],
+};
+
+const MUSCLE_ORDER = ['Bröst', 'Rygg', 'Axlar', 'Biceps', 'Triceps', 'Ben', 'Rumpa', 'Mage', 'Cardio', 'Övrigt'];
 
 const C = {
   sv: {
@@ -119,12 +149,21 @@ export default function ProgramScreen() {
 
   const [view, setView]       = useState<ViewState>('list');
   const [programs, setPrograms] = useState<SavedProgram[]>([]);
+  const [allMachines, setAllMachines] = useState<Machine[]>([]);
 
   // Wizard
   const [step, setStep]       = useState(0);
   const [goal, setGoal]       = useState<string | null>(null);
   const [days, setDays]       = useState<number | null>(null);
   const [minutes, setMinutes] = useState<number | null>(null);
+  const [mode, setMode]       = useState<'ai' | 'manual' | null>(null);
+
+  // Manual builder
+  const [manualBudgetMode, setManualBudgetMode] = useState<'budget' | 'free' | null>(null);
+  const [manualTargetMin, setManualTargetMin]   = useState<number | null>(null);
+  const [manualDayIndex, setManualDayIndex]     = useState(0);
+  const [manualDays, setManualDays]             = useState<ManualExercise[][]>([]);
+  const [currentSelection, setCurrentSelection] = useState<ManualExercise[]>([]);
 
   // After generation
   const [genDays, setGenDays]         = useState<ProgramDay[]>([]);
@@ -140,6 +179,7 @@ export default function ProgramScreen() {
 
   function loadProgs() {
     setPrograms(getAllPrograms());
+    setAllMachines(getAllMachines());
   }
 
   useFocusEffect(useCallback(() => {
@@ -175,8 +215,90 @@ export default function ProgramScreen() {
   }
 
   function resetWizard() {
-    setStep(0); setGoal(null); setDays(null); setMinutes(null);
+    setStep(0); setGoal(null); setDays(null); setMinutes(null); setMode(null);
+    setManualBudgetMode(null); setManualTargetMin(null); setManualDayIndex(0);
+    setManualDays([]); setCurrentSelection([]);
     setView('wizard');
+  }
+
+  // ── Manual builder ──────────────────────────────────────
+  function chooseBudgetMode(m: 'budget' | 'free') {
+    setManualBudgetMode(m);
+    if (m === 'budget') {
+      setView('manualBudgetPick');
+    } else {
+      setManualTargetMin(null);
+      setView('manualBuild');
+    }
+  }
+
+  function pickBudgetMinutes(mins: number) {
+    setManualTargetMin(mins);
+    setView('manualBuild');
+  }
+
+  function toggleManualMachine(machine: Machine) {
+    setCurrentSelection(prev => {
+      const exists = prev.find(e => e.machineId === machine.id);
+      if (exists) return prev.filter(e => e.machineId !== machine.id);
+      const sets = 3;
+      return [...prev, { machineId: machine.id, name: machine.name, muscleGroup: machine.muscle_group, sets, estMin: estimateMinutes(machine.muscle_group, sets) }];
+    });
+  }
+
+  function adjustSets(machineId: number, delta: number) {
+    setCurrentSelection(prev => prev.map(e => {
+      if (e.machineId !== machineId) return e;
+      const sets = Math.max(1, e.sets + delta);
+      return { ...e, sets, estMin: estimateMinutes(e.muscleGroup, sets) };
+    }));
+  }
+
+  function removeManualMachine(machineId: number) {
+    setCurrentSelection(prev => prev.filter(e => e.machineId !== machineId));
+  }
+
+  const currentTotalMin = currentSelection.reduce((sum, e) => sum + e.estMin, 0);
+
+  function assembleManualProgram(allDays: ManualExercise[][]) {
+    const weekdayNames = WEEKDAYS[lang];
+    const spread = DAY_SPREAD[days ?? 3] ?? DAY_SPREAD[3];
+    const result: ProgramDay[] = [];
+    let trainingIdx = 0;
+    for (let i = 0; i < 7; i++) {
+      if (spread.includes(i)) {
+        const selection = allDays[trainingIdx] ?? [];
+        const groups = [...new Set(selection.map(e => e.muscleGroup).filter(Boolean))] as string[];
+        const type = groups.length ? groups.join(' & ') : (lang === 'sv' ? 'Eget pass' : 'Custom session');
+        const exercises: ProgramExercise[] = selection.map(e => ({
+          name: e.name,
+          sets: e.muscleGroup === 'Cardio' ? 1 : e.sets,
+          reps: e.muscleGroup === 'Cardio' ? `${e.estMin} min` : '10-12',
+          restSec: 90,
+          tip: '',
+        }));
+        result.push({ dayNumber: i + 1, name: weekdayNames[i], isRest: false, type, muscles: groups.join('  ·  '), exercises });
+        trainingIdx++;
+      } else {
+        result.push({ dayNumber: i + 1, name: weekdayNames[i], isRest: true, type: lang === 'sv' ? 'Vila' : 'Rest', muscles: '', exercises: [] });
+      }
+    }
+    setGenDays(result);
+    setMinutes(manualTargetMin ?? 0);
+    setNewProgName(`${goal?.split(' ')[0] ?? (lang === 'sv' ? 'Program' : 'Program')} · ${days} ${lang === 'sv' ? 'pass' : 'sessions'}`);
+    setView('name');
+  }
+
+  function finishDay() {
+    const updated = [...manualDays];
+    updated[manualDayIndex] = currentSelection;
+    setManualDays(updated);
+    if (manualDayIndex + 1 < (days ?? 1)) {
+      setManualDayIndex(manualDayIndex + 1);
+      setCurrentSelection([]);
+    } else {
+      assembleManualProgram(updated);
+    }
   }
 
   // ── List actions ───────────────────────────────────────
@@ -219,7 +341,7 @@ export default function ProgramScreen() {
     setView('detail');
   }
 
-  const canNext = step === 0 ? !!goal : step === 1 ? !!days : !!minutes;
+  const canNext = step === 0 ? !!goal : step === 1 ? !!days : step === 2 ? !!mode : !!minutes;
 
   // ── Loading ────────────────────────────────────────────
   if (view === 'loading') {
@@ -290,7 +412,9 @@ export default function ProgramScreen() {
                         <View style={s.exBadge}><Text style={s.exBadgeText}>{i + 1}</Text></View>
                         <View style={{ flex: 1 }}>
                           <Text style={s.exName}>{ex.name}</Text>
-                          <Text style={s.exMeta}>{ex.sets} {c.sets} × {ex.reps} reps  ·  {ex.restSec} {c.rest}</Text>
+                          <Text style={s.exMeta}>
+                            {ex.reps.includes('min') ? `≈ ${ex.reps}` : `${ex.sets} ${c.sets} × ${ex.reps} reps  ·  ${ex.restSec} ${c.rest}`}
+                          </Text>
                           {!!ex.tip && <Text style={s.exTip}>{c.tip} {ex.tip}</Text>}
                         </View>
                       </View>
@@ -367,7 +491,7 @@ export default function ProgramScreen() {
         </View>
         <ScrollView contentContainerStyle={s.wizScroll}>
           <View style={s.dots}>
-            {[0, 1, 2].map(i => <View key={i} style={[s.dot, i <= step && s.dotOn]} />)}
+            {[0, 1, 2, 3].map(i => <View key={i} style={[s.dot, i <= step && s.dotOn]} />)}
           </View>
 
           {step === 0 && (
@@ -410,6 +534,28 @@ export default function ProgramScreen() {
 
           {step === 2 && (
             <>
+              <Text style={s.wizQ}>{lang === 'sv' ? 'Hur vill du bygga programmet?' : 'How do you want to build the program?'}</Text>
+              <TouchableOpacity style={[s.optCard, mode === 'ai' && s.optCardSel]} onPress={() => setMode('ai')}>
+                <Text style={s.optIcon}>🤖</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.optTitle}>{lang === 'sv' ? 'Låt AI välja' : 'Let AI choose'}</Text>
+                  <Text style={s.optSub}>{lang === 'sv' ? 'AI väljer bland dina registrerade maskiner' : 'AI picks from your registered machines'}</Text>
+                </View>
+                {mode === 'ai' && <Text style={s.check}>✓</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.optCard, mode === 'manual' && s.optCardSel]} onPress={() => setMode('manual')}>
+                <Text style={s.optIcon}>✋</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.optTitle}>{lang === 'sv' ? 'Välj maskiner själv' : 'Choose machines yourself'}</Text>
+                  <Text style={s.optSub}>{lang === 'sv' ? 'Bygg varje träningsdag manuellt' : 'Build each training day manually'}</Text>
+                </View>
+                {mode === 'manual' && <Text style={s.check}>✓</Text>}
+              </TouchableOpacity>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
               <Text style={s.wizQ}>{c.step3q}</Text>
               <View style={s.grid}>
                 {c.times.map(tm => (
@@ -433,14 +579,183 @@ export default function ProgramScreen() {
             )}
             <TouchableOpacity
               style={[s.nextBtn, !canNext && s.nextBtnOff]}
-              onPress={step < 2 ? () => setStep(p => p + 1) : generate}
+              onPress={() => {
+                if (step === 2 && mode === 'manual') {
+                  setManualDayIndex(0); setManualDays([]); setCurrentSelection([]);
+                  setView('manualTimeChoice');
+                  return;
+                }
+                if (step < 3) { setStep(p => p + 1); return; }
+                generate();
+              }}
               disabled={!canNext}
             >
-              <Text style={s.nextText}>{step < 2 ? c.next : c.createBtn}</Text>
+              <Text style={s.nextText}>{step === 3 ? c.createBtn : c.next}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
+    );
+  }
+
+  // ── Manual: time choice ─────────────────────────────────
+  if (view === 'manualTimeChoice') {
+    return (
+      <View style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => setView('wizard')} style={s.backBtn}>
+            <Text style={s.backText}>{c.back}</Text>
+          </TouchableOpacity>
+          <LanguageToggle />
+        </View>
+        <ScrollView contentContainerStyle={s.wizScroll}>
+          <Text style={s.wizQ}>{lang === 'sv' ? 'Hur vill du styra tiden?' : 'How do you want to manage time?'}</Text>
+          <TouchableOpacity style={s.optCard} onPress={() => chooseBudgetMode('budget')}>
+            <Text style={s.optIcon}>⏱️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.optTitle}>{lang === 'sv' ? 'Sätt en tidsbudget' : 'Set a time budget'}</Text>
+              <Text style={s.optSub}>{lang === 'sv' ? 'Välj passlängd, se hur mycket tid som återstår när du lägger till maskiner' : 'Pick a session length, see remaining time as you add machines'}</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.optCard} onPress={() => chooseBudgetMode('free')}>
+            <Text style={s.optIcon}>➕</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={s.optTitle}>{lang === 'sv' ? 'Inget tidsmål' : 'No time target'}</Text>
+              <Text style={s.optSub}>{lang === 'sv' ? 'Välj alla maskiner du vill ha — vi räknar upp uppskattad tid' : 'Pick all the machines you want — we\'ll count up the estimated time'}</Text>
+            </View>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ── Manual: budget minutes pick ─────────────────────────
+  if (view === 'manualBudgetPick') {
+    return (
+      <View style={s.container}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => setView('manualTimeChoice')} style={s.backBtn}>
+            <Text style={s.backText}>{c.back}</Text>
+          </TouchableOpacity>
+          <LanguageToggle />
+        </View>
+        <ScrollView contentContainerStyle={s.wizScroll}>
+          <Text style={s.wizQ}>{c.step3q}</Text>
+          <View style={s.grid}>
+            {c.times.map(tm => (
+              <TouchableOpacity key={tm.value} style={s.gridCell} onPress={() => pickBudgetMinutes(tm.value)}>
+                <Text style={s.gridNum}>{tm.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ── Manual: build a training day ────────────────────────
+  if (view === 'manualBuild') {
+    const remaining = manualTargetMin != null ? manualTargetMin - currentTotalMin : null;
+    const grouped: Record<string, Machine[]> = {};
+    for (const m of allMachines) {
+      const g = m.muscle_group ?? (lang === 'sv' ? 'Övrigt' : 'Other');
+      if (!grouped[g]) grouped[g] = [];
+      grouped[g].push(m);
+    }
+    const sortedGroups = [
+      ...MUSCLE_ORDER.filter(g => grouped[g]),
+      ...Object.keys(grouped).filter(g => !MUSCLE_ORDER.includes(g)),
+    ];
+    return (
+      <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => setView('manualTimeChoice')} style={s.backBtn}>
+            <Text style={s.backText}>{c.back}</Text>
+          </TouchableOpacity>
+          <Text style={s.title}>
+            {lang === 'sv' ? `Pass ${manualDayIndex + 1} av ${days}` : `Session ${manualDayIndex + 1} of ${days}`}
+          </Text>
+          <LanguageToggle />
+        </View>
+
+        <View style={s.timeBar}>
+          {manualTargetMin != null ? (
+            <>
+              <View style={s.timeBarTrack}>
+                <View style={[s.timeBarFill, { width: `${Math.min(100, (currentTotalMin / manualTargetMin) * 100)}%` as any, backgroundColor: (remaining ?? 0) < 0 ? ACCENT : '#1ecfa4' }]} />
+              </View>
+              <Text style={[s.timeBarText, { color: (remaining ?? 0) < 0 ? ACCENT : '#1ecfa4' }]}>
+                {currentTotalMin} / {manualTargetMin} min{(remaining ?? 0) < 0 ? (lang === 'sv' ? ' · över budget' : ' · over budget') : ''}
+              </Text>
+            </>
+          ) : (
+            <Text style={s.timeBarTextFree}>
+              {lang === 'sv' ? `≈ ${currentTotalMin} min allokerat` : `≈ ${currentTotalMin} min allocated`}
+            </Text>
+          )}
+        </View>
+
+        {currentSelection.length > 0 && (
+          <View style={s.selectionList}>
+            {currentSelection.map(e => (
+              <View key={e.machineId} style={s.selRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.selName} numberOfLines={1}>{e.name}</Text>
+                  <Text style={s.selMeta}>{e.muscleGroup === 'Cardio' ? `~${e.estMin} min` : `${e.sets} set · ~${e.estMin} min`}</Text>
+                </View>
+                {e.muscleGroup !== 'Cardio' && (
+                  <View style={s.selSteppers}>
+                    <TouchableOpacity style={s.selStepBtn} onPress={() => adjustSets(e.machineId, -1)}>
+                      <Text style={s.selStepText}>−</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={s.selStepBtn} onPress={() => adjustSets(e.machineId, 1)}>
+                      <Text style={s.selStepText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                <TouchableOpacity style={s.selDelBtn} onPress={() => removeManualMachine(e.machineId)}>
+                  <Text style={s.selDelText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
+          {sortedGroups.map(group => (
+            <View key={group}>
+              <Text style={s.pickGroupLabel}>{group.toUpperCase()}</Text>
+              {grouped[group].map(machine => {
+                const selected = currentSelection.some(e => e.machineId === machine.id);
+                return (
+                  <TouchableOpacity
+                    key={machine.id}
+                    style={[s.pickRow, selected && s.pickRowSel]}
+                    onPress={() => toggleManualMachine(machine)}
+                  >
+                    <Text style={s.pickName} numberOfLines={1}>{machine.name}</Text>
+                    <Text style={s.pickCheck}>{selected ? '✓' : '+'}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </ScrollView>
+
+        <View style={s.wizNav}>
+          <TouchableOpacity
+            style={[s.nextBtn, currentSelection.length === 0 && s.nextBtnOff, { flex: 1 }]}
+            onPress={finishDay}
+            disabled={currentSelection.length === 0}
+          >
+            <Text style={s.nextText}>
+              {manualDayIndex + 1 < (days ?? 1)
+                ? (lang === 'sv' ? 'Nästa pass →' : 'Next session →')
+                : (lang === 'sv' ? '✓ Skapa program' : '✓ Create program')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     );
   }
 
@@ -452,9 +767,26 @@ export default function ProgramScreen() {
         <LanguageToggle />
       </View>
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
-        <TouchableOpacity style={s.createBtn} onPress={resetWizard}>
-          <Text style={s.createBtnText}>{c.newProgram}</Text>
-        </TouchableOpacity>
+        {allMachines.length === 0 ? (
+          <View style={s.gateCard}>
+            <Text style={s.gateIcon}>🏋️</Text>
+            <Text style={s.gateTitle}>
+              {lang === 'sv' ? 'Registrera en maskin först' : 'Register a machine first'}
+            </Text>
+            <Text style={s.gateSub}>
+              {lang === 'sv'
+                ? 'Träningsprogram kan bara byggas av maskiner du redan registrerat. Skanna eller lägg till minst en maskin i registret innan du skapar ett program.'
+                : 'Training programs can only be built from machines you have already registered. Scan or add at least one machine to your registry before creating a program.'}
+            </Text>
+            <TouchableOpacity style={s.gateBtn} onPress={() => router.push('/(tabs)/machines')}>
+              <Text style={s.gateBtnText}>{lang === 'sv' ? 'Gå till Maskiner →' : 'Go to Machines →'}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={s.createBtn} onPress={resetWizard}>
+            <Text style={s.createBtnText}>{c.newProgram}</Text>
+          </TouchableOpacity>
+        )}
 
         {programs.length === 0 && (
           <Text style={s.noPrograms}>{c.noPrograms}</Text>
@@ -608,4 +940,31 @@ const s = StyleSheet.create({
   exName:           { fontSize: 14, fontWeight: '700', color: '#dde3f0', marginBottom: 3 },
   exMeta:           { fontSize: 12, color: '#7a85a0', marginBottom: 3 },
   exTip:            { fontSize: 12, color: 'rgba(30,207,164,.85)', lineHeight: 17 },
+
+  // Manual builder
+  timeBar:          { paddingHorizontal: 16, marginBottom: 12 },
+  timeBarTrack:     { height: 8, backgroundColor: '#1c2030', borderRadius: 4, overflow: 'hidden', marginBottom: 6 },
+  timeBarFill:      { height: 8, borderRadius: 4 },
+  timeBarText:      { fontSize: 12, fontWeight: '700' },
+  timeBarTextFree:  { fontSize: 13, fontWeight: '700', color: '#1ecfa4' },
+  selectionList:    { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, overflow: 'hidden' },
+  selRow:           { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#22273a' },
+  selName:          { fontSize: 14, fontWeight: '700', color: '#dde3f0' },
+  selMeta:          { fontSize: 11, color: '#7a85a0', marginTop: 1 },
+  selSteppers:      { flexDirection: 'row', gap: 4 },
+  selStepBtn:       { width: 26, height: 26, borderRadius: 6, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  selStepText:      { color: '#dde3f0', fontSize: 15 },
+  selDelBtn:        { width: 22, height: 22, borderRadius: 11, backgroundColor: '#2a1010', alignItems: 'center', justifyContent: 'center' },
+  selDelText:       { color: ACCENT, fontSize: 11, fontWeight: '700' },
+  pickGroupLabel:   { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: ACCENT, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6 },
+  pickRow:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 12, padding: 12, marginHorizontal: 16, marginBottom: 8 },
+  pickRowSel:       { borderColor: '#1ecfa4', backgroundColor: 'rgba(30,207,164,.06)' },
+  pickName:         { fontSize: 14, fontWeight: '600', color: '#dde3f0', flex: 1, marginRight: 8 },
+  pickCheck:        { fontSize: 16, fontWeight: '800', color: '#1ecfa4' },
+  gateCard:         { margin: 16, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 16, padding: 24, alignItems: 'center' },
+  gateIcon:         { fontSize: 36, marginBottom: 12 },
+  gateTitle:        { fontSize: 17, fontWeight: '800', color: '#dde3f0', marginBottom: 8, textAlign: 'center' },
+  gateSub:          { fontSize: 13, color: '#7a85a0', textAlign: 'center', lineHeight: 19, marginBottom: 18 },
+  gateBtn:          { backgroundColor: ACCENT, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12 },
+  gateBtnText:      { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

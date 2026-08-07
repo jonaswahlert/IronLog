@@ -177,7 +177,7 @@ export default function GymScanScreen() {
         <ScrollView style={s.resultScroll} contentContainerStyle={{ paddingBottom: 40 }}>
           <View style={s.resultCard}>
             {imagePath && (
-              <Image source={{ uri: resolveImagePath(imagePath)! }} style={s.machinePreview} resizeMode="cover" />
+              <Image source={{ uri: resolveImagePath(imagePath)! }} style={s.machinePreview} resizeMode="contain" />
             )}
             <View style={s.resultHeader}>
               <View style={s.dot} />
@@ -199,6 +199,7 @@ export default function GymScanScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ gap: 8, marginBottom: 20 }}
             >
               {MUSCLE_GROUPS.map(g => (
@@ -287,6 +288,7 @@ export default function GymScanScreen() {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
               style={{ marginBottom: 12 }}
             >

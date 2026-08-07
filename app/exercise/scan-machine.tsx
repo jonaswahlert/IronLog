@@ -92,7 +92,7 @@ export default function ScanMachineScreen() {
         nameplate_image_path: nameplateImagePath,
       });
       router.push({
-        pathname: selectedGroup === 'Cardio' ? '/exercise/scan-cardio' : '/exercise/scan-weight',
+        pathname: '/exercise/new',
         params: {
           sessionId,
           city:              city ?? '',
@@ -173,7 +173,7 @@ export default function ScanMachineScreen() {
         </View>
         <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
           {machineImagePath && (
-            <Image source={{ uri: resolveImagePath(machineImagePath)! }} style={s.machinePreview} resizeMode="cover" />
+            <Image source={{ uri: resolveImagePath(machineImagePath)! }} style={s.machinePreview} resizeMode="contain" />
           )}
 
           <View style={s.resultHeader}>
@@ -193,7 +193,7 @@ export default function ScanMachineScreen() {
           />
 
           <Text style={s.fieldLabel}>{t('muscle_group')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, marginBottom: 20 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, marginBottom: 20 }}>
             {MUSCLE_GROUPS.map(g => (
               <TouchableOpacity key={g} style={[s.groupChip, selectedGroup === g && s.groupChipActive]} onPress={() => setSelectedGroup(g)}>
                 <Text style={[s.groupChipText, selectedGroup === g && s.groupChipTextActive]}>{g}</Text>

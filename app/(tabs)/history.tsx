@@ -46,7 +46,7 @@ export default function HistoryScreen() {
       </View>
 
       {cities.length > 0 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
           <TouchableOpacity style={[s.chip, !activeCity && s.chipActive]} onPress={() => setActiveCity(null)}>
             <Text style={[s.chipText, !activeCity && s.chipTextActive]}>{t('all_cities')}</Text>
           </TouchableOpacity>

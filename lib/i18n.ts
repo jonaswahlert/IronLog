@@ -48,9 +48,6 @@ const T = {
     ai_identification:   'AI-IDENTIFIERING',
     tap_to_change:       'Tryck för att ändra',
     weight:              'VIKT',
-    ai_reading:          'AI-AVLÄSNING',
-    take_weight_photo:   'Ta foto på vikten',
-    ai_reads_auto:       'AI läser av viktinställningen automatiskt',
     saving:              'Sparar...',
     save_exercise:       '✓ Spara övning',
     // Scan machine screen
@@ -64,11 +61,6 @@ const T = {
     camera_hint_machine: 'Fotografera maskinen eller dess namnskylt',
     camera_permission:   'IronLog behöver åtkomst till kameran.',
     allow_camera:        'Tillåt kamera',
-    // Scan weight screen
-    read_weight:         'Läs av vikten',
-    ai_reading_done:     'AI-AVLÄSNING KLAR',
-    use_this_weight:     '✓ Använd denna vikt',
-    camera_hint_weight:  'Rikta kameran mot viktinställningen',
     // Select machine screen
     select_machine:      'Välj maskin',
     no_machines_saved:   'Inga maskiner sparade ännu.',
@@ -147,9 +139,6 @@ const T = {
     ai_identification:   'AI IDENTIFICATION',
     tap_to_change:       'Tap to change',
     weight:              'WEIGHT',
-    ai_reading:          'AI READING',
-    take_weight_photo:   'Take photo of weight',
-    ai_reads_auto:       'AI reads the weight setting automatically',
     saving:              'Saving...',
     save_exercise:       '✓ Save Exercise',
     // Scan machine screen
@@ -163,11 +152,6 @@ const T = {
     camera_hint_machine: 'Photo of the machine or its name plate',
     camera_permission:   'IronLog needs camera access.',
     allow_camera:        'Allow Camera',
-    // Scan weight screen
-    read_weight:         'Read Weight',
-    ai_reading_done:     'AI READING COMPLETE',
-    use_this_weight:     '✓ Use this weight',
-    camera_hint_weight:  'Point camera at the weight setting',
     // Select machine screen
     select_machine:      'Select Machine',
     no_machines_saved:   'No machines saved yet.',

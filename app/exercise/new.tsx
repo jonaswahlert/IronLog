@@ -11,15 +11,15 @@ export default function NewExerciseScreen() {
   const {
     sessionId, city, gym,
     machineId, machineType, machineImagePath, machineConfidence, muscleGroup,
-    weightKg, weightImagePath, weightConfidence,
-    defaultSets, defaultReps,
+    weightKg, defaultSets, defaultReps,
   } = useLocalSearchParams<{
     sessionId: string; city?: string; gym?: string;
     machineId?: string; machineType?: string; machineImagePath?: string;
     machineConfidence?: string; muscleGroup?: string;
-    weightKg?: string; weightImagePath?: string; weightConfidence?: string;
-    defaultSets?: string; defaultReps?: string;
+    weightKg?: string; defaultSets?: string; defaultReps?: string;
   }>();
+
+  const isCardio = muscleGroup === 'Cardio';
 
   const [machineInput, setMachineInput] = useState(machineType ?? '');
   const [weightInput, setWeightInput]   = useState(weightKg ?? '');
@@ -27,30 +27,63 @@ export default function NewExerciseScreen() {
   const [repsInput, setRepsInput]       = useState(String(Number(defaultReps) || 10));
   const [saving, setSaving]             = useState(false);
 
+  const [distance, setDistance]   = useState('');
+  const [duration, setDuration]   = useState('');
+  const [speed, setSpeed]         = useState('');
+  const [heartRate, setHeartRate] = useState('');
+  const [calories, setCalories]   = useState('');
+  const [floors, setFloors]       = useState('');
+  const [incline, setIncline]     = useState('');
+
   const fromRegistry = !!machineId;
   const scannedMachine = !fromRegistry && !!machineType;
 
   function save() {
-    if (!machineInput.trim() || !weightInput.trim()) return;
+    if (!machineInput.trim()) return;
     setSaving(true);
-    addExercise({
-      session_id:         Number(sessionId),
-      machine_id:         machineId ? Number(machineId) : null,
-      machine_type:       machineInput.trim(),
-      machine_confidence: machineConfidence ? Number(machineConfidence) : null,
-      machine_image_path: machineImagePath ?? null,
-      muscle_group:       muscleGroup ?? null,
-      weight_kg:          parseFloat(weightInput) || 0,
-      weight_confidence:  weightConfidence ? Number(weightConfidence) : null,
-      weight_image_path:  weightImagePath ?? null,
-      sets:               parseInt(setsInput) || 3,
-      reps:               parseInt(repsInput) || 10,
-      notes:              null,
-    });
+    if (isCardio) {
+      addExercise({
+        session_id:         Number(sessionId),
+        machine_id:         machineId ? Number(machineId) : null,
+        machine_type:       machineInput.trim(),
+        machine_confidence: machineConfidence ? Number(machineConfidence) : null,
+        machine_image_path: machineImagePath ?? null,
+        muscle_group:       'Cardio',
+        weight_kg:          null,
+        weight_confidence:  null,
+        weight_image_path:  null,
+        sets:               null,
+        reps:               null,
+        notes:              null,
+        distance_km:        distance.trim()  ? parseFloat(distance)  : null,
+        duration_min:       duration.trim()  ? parseFloat(duration)  : null,
+        avg_speed_kmh:      speed.trim()     ? parseFloat(speed)     : null,
+        avg_heart_rate:     heartRate.trim() ? parseInt(heartRate)   : null,
+        calories:           calories.trim()  ? parseInt(calories)    : null,
+        floors_climbed:     floors.trim()    ? parseInt(floors)      : null,
+        incline_pct:        incline.trim()   ? parseFloat(incline)   : null,
+      });
+    } else {
+      if (!weightInput.trim()) { setSaving(false); return; }
+      addExercise({
+        session_id:         Number(sessionId),
+        machine_id:         machineId ? Number(machineId) : null,
+        machine_type:       machineInput.trim(),
+        machine_confidence: machineConfidence ? Number(machineConfidence) : null,
+        machine_image_path: machineImagePath ?? null,
+        muscle_group:       muscleGroup ?? null,
+        weight_kg:          parseFloat(weightInput) || 0,
+        weight_confidence:  null,
+        weight_image_path:  null,
+        sets:               parseInt(setsInput) || 3,
+        reps:               parseInt(repsInput) || 10,
+        notes:              null,
+      });
+    }
     router.replace('/(tabs)/');
   }
 
-  const canSave = machineInput.trim() !== '' && weightInput.trim() !== '';
+  const canSave = machineInput.trim() !== '' && (isCardio || weightInput.trim() !== '');
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -101,74 +134,113 @@ export default function NewExerciseScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Weight section */}
-      <Text style={s.sectionLabel}>{t('weight')} (kg)</Text>
-      <View style={s.inputCard}>
-        <TextInput
-          style={s.bigInput}
-          placeholder="0"
-          placeholderTextColor="#7a85a0"
-          value={weightInput}
-          onChangeText={setWeightInput}
-          keyboardType="decimal-pad"
-        />
-        {weightConfidence && <Text style={s.sourceBadge}>📷 AI · {weightConfidence}%</Text>}
-      </View>
-      <TouchableOpacity
-        style={s.cameraBtn}
-        onPress={() => router.push({
-          pathname: '/exercise/scan-weight',
-          params: {
-            sessionId, city: city ?? '', gym: gym ?? '',
-            machineId: machineId ?? '', machineType: machineInput,
-            machineImagePath: machineImagePath ?? '', machineConfidence: machineConfidence ?? '',
-            muscleGroup: muscleGroup ?? '',
-          },
-        })}
-      >
-        <Text style={s.cameraBtnText}>📷 {t('take_weight_photo')}</Text>
-      </TouchableOpacity>
+      {isCardio ? (
+        <>
+          <Text style={s.sectionLabel}>KONDITIONSDATA</Text>
+          <View style={s.fieldRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>DISTANS (KM)</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={distance} onChangeText={setDistance} keyboardType="decimal-pad" />
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>TID (MIN)</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={duration} onChangeText={setDuration} keyboardType="decimal-pad" />
+              </View>
+            </View>
+          </View>
+          <View style={s.fieldRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>HASTIGHET (KM/H)</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={speed} onChangeText={setSpeed} keyboardType="decimal-pad" />
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>PULS (BPM)</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={heartRate} onChangeText={setHeartRate} keyboardType="number-pad" />
+              </View>
+            </View>
+          </View>
+          <View style={s.fieldRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>KALORIER</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={calories} onChangeText={setCalories} keyboardType="number-pad" />
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.inputLabel}>VÅNINGAR/STEG</Text>
+              <View style={s.inputCard}>
+                <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={floors} onChangeText={setFloors} keyboardType="number-pad" />
+              </View>
+            </View>
+          </View>
+          <Text style={s.sectionLabel}>LUTNING/MOTSTÅND (%)</Text>
+          <View style={s.inputCard}>
+            <TextInput style={s.bigInput} placeholder="—" placeholderTextColor="#7a85a0" value={incline} onChangeText={setIncline} keyboardType="decimal-pad" />
+          </View>
+        </>
+      ) : (
+        <>
+          {/* Weight section */}
+          <Text style={s.sectionLabel}>{t('weight')} (kg)</Text>
+          <View style={s.inputCard}>
+            <TextInput
+              style={s.bigInput}
+              placeholder="0"
+              placeholderTextColor="#7a85a0"
+              value={weightInput}
+              onChangeText={setWeightInput}
+              keyboardType="decimal-pad"
+            />
+          </View>
 
-      {/* Sets & Reps */}
-      <Text style={s.sectionLabel}>SETS & REPS</Text>
-      <View style={s.setsRow}>
-        <View style={s.inputBlock}>
-          <Text style={s.inputLabel}>SETS</Text>
-          <View style={s.stepRow}>
-            <TouchableOpacity style={s.stepBtn} onPress={() => setSetsInput(String(Math.max(1, parseInt(setsInput || '1') - 1)))}>
-              <Text style={s.stepText}>−</Text>
-            </TouchableOpacity>
-            <TextInput
-              style={s.stepInput}
-              value={setsInput}
-              onChangeText={setSetsInput}
-              keyboardType="number-pad"
-              textAlign="center"
-            />
-            <TouchableOpacity style={s.stepBtn} onPress={() => setSetsInput(String(parseInt(setsInput || '0') + 1))}>
-              <Text style={s.stepText}>+</Text>
-            </TouchableOpacity>
+          {/* Sets & Reps */}
+          <Text style={s.sectionLabel}>SETS & REPS</Text>
+          <View style={s.setsRow}>
+            <View style={s.inputBlock}>
+              <Text style={s.inputLabel}>SETS</Text>
+              <View style={s.stepRow}>
+                <TouchableOpacity style={s.stepBtn} onPress={() => setSetsInput(String(Math.max(1, parseInt(setsInput || '1') - 1)))}>
+                  <Text style={s.stepText}>−</Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={s.stepInput}
+                  value={setsInput}
+                  onChangeText={setSetsInput}
+                  keyboardType="number-pad"
+                  textAlign="center"
+                />
+                <TouchableOpacity style={s.stepBtn} onPress={() => setSetsInput(String(parseInt(setsInput || '0') + 1))}>
+                  <Text style={s.stepText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={s.inputBlock}>
+              <Text style={s.inputLabel}>REPS</Text>
+              <View style={s.stepRow}>
+                <TouchableOpacity style={s.stepBtn} onPress={() => setRepsInput(String(Math.max(1, parseInt(repsInput || '1') - 1)))}>
+                  <Text style={s.stepText}>−</Text>
+                </TouchableOpacity>
+                <TextInput
+                  style={s.stepInput}
+                  value={repsInput}
+                  onChangeText={setRepsInput}
+                  keyboardType="number-pad"
+                  textAlign="center"
+                />
+                <TouchableOpacity style={s.stepBtn} onPress={() => setRepsInput(String(parseInt(repsInput || '0') + 1))}>
+                  <Text style={s.stepText}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
-        </View>
-        <View style={s.inputBlock}>
-          <Text style={s.inputLabel}>REPS</Text>
-          <View style={s.stepRow}>
-            <TouchableOpacity style={s.stepBtn} onPress={() => setRepsInput(String(Math.max(1, parseInt(repsInput || '1') - 1)))}>
-              <Text style={s.stepText}>−</Text>
-            </TouchableOpacity>
-            <TextInput
-              style={s.stepInput}
-              value={repsInput}
-              onChangeText={setRepsInput}
-              keyboardType="number-pad"
-              textAlign="center"
-            />
-            <TouchableOpacity style={s.stepBtn} onPress={() => setRepsInput(String(parseInt(repsInput || '0') + 1))}>
-              <Text style={s.stepText}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+        </>
+      )}
 
       <TouchableOpacity style={[s.saveBtn, !canSave && s.saveBtnDisabled]} onPress={save} disabled={!canSave || saving}>
         <Text style={s.saveBtnText}>{saving ? t('saving') : t('save_exercise')}</Text>
@@ -197,11 +269,10 @@ const s = StyleSheet.create({
   choiceBtnAccent: { backgroundColor: '#f04a18', borderColor: '#f04a18' },
   choiceIcon:      { fontSize: 22 },
   choiceBtnText:   { fontSize: 12, fontWeight: '700', color: '#dde3f0', textAlign: 'center' },
-  cameraBtn:       { marginHorizontal: 16, marginBottom: 20, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center' },
-  cameraBtnText:   { fontSize: 14, fontWeight: '600', color: '#7a85a0' },
+  fieldRow:        { flexDirection: 'row', gap: 0 },
   setsRow:         { flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 20 },
   inputBlock:      { flex: 1 },
-  inputLabel:      { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, color: '#7a85a0', marginBottom: 8 },
+  inputLabel:      { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, color: '#7a85a0', marginBottom: 8, paddingHorizontal: 16 },
   stepRow:         { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, overflow: 'hidden' },
   stepBtn:         { width: 44, height: 52, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
   stepText:        { color: '#dde3f0', fontSize: 20 },
