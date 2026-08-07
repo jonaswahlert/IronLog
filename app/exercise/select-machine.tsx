@@ -28,6 +28,21 @@ export default function SelectMachineScreen() {
   }, [sessionCity]));
 
   function selectMachine(machine: Machine) {
+    if (machine.muscle_group === 'Cardio') {
+      router.push({
+        pathname: '/exercise/scan-cardio',
+        params: {
+          sessionId,
+          city:              sessionCity ?? '',
+          gym:               sessionGym  ?? '',
+          machineId:         String(machine.id),
+          machineType:       machine.name,
+          machineImagePath:  machine.image_path ?? '',
+          machineConfidence: '100',
+        },
+      });
+      return;
+    }
     const last = getLastExerciseForMachine(machine.id);
     router.push({
       pathname: '/exercise/new',

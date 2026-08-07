@@ -151,6 +151,33 @@ export async function readWeightFromImage(base64: string): Promise<{ weight_kg: 
   return { weight_kg: 0, confidence: 0, label: '' };
 }
 
+// ── Cardio machine display reading ────────────────────────
+export type CardioReading = {
+  distance_km?: number;
+  duration_min?: number;
+  avg_speed_kmh?: number;
+  avg_heart_rate?: number;
+  calories?: number;
+  floors_climbed?: number;
+  incline_pct?: number;
+  confidence: number;
+  error?: string;
+};
+
+export async function readCardioDisplay(base64: string): Promise<CardioReading> {
+  const text = await geminiVision(base64,
+    'Look at this cardio machine\'s console/display (treadmill, stair climber, exercise bike, elliptical, rowing machine, etc.), photographed right after finishing a workout. Read whichever of these values are actually visible on the display — leave out any field that is not shown, do not guess:\n- distance_km (total distance in km; convert from miles if shown as mi)\n- duration_min (elapsed workout time in minutes)\n- avg_speed_kmh (average speed/pace in km/h; convert from mph if shown)\n- avg_heart_rate (average or current heart rate in bpm)\n- calories (calories burned)\n- floors_climbed (floors or flights climbed — stair machines only)\n- incline_pct (incline percentage or resistance/level shown)\nRespond with ONLY a JSON object containing just the fields that are actually visible on the display, plus a confidence 0-100 for how clearly the display could be read:\n{"distance_km":5.2,"duration_min":30,"avg_heart_rate":142,"calories":310,"confidence":85}'
+  );
+  if (text.startsWith('__ERROR__:')) {
+    return { confidence: 0, error: text.slice(10).trim() };
+  }
+  const match = text.match(/\{[\s\S]*?\}/);
+  if (match) {
+    try { return JSON.parse(match[0]); } catch {}
+  }
+  return { confidence: 0 };
+}
+
 // ── Body progress comparison (two photos) ─────────────────
 export type BodyPart = {
   name: string;

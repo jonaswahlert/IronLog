@@ -47,6 +47,14 @@ export function initDatabase() {
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN machine_id INTEGER REFERENCES machines(id)`); } catch {}
   try { db.execSync(`ALTER TABLE exercises ADD COLUMN muscle_group TEXT`); } catch {}
   try { db.execSync(`ALTER TABLE machines ADD COLUMN nameplate_image_path TEXT`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN distance_km REAL`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN duration_min REAL`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN avg_speed_kmh REAL`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN avg_heart_rate INTEGER`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN calories INTEGER`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN floors_climbed INTEGER`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN incline_pct REAL`); } catch {}
+  try { db.execSync(`ALTER TABLE exercises ADD COLUMN cardio_image_path TEXT`); } catch {}
 }
 
 // ── Machines ──────────────────────────────────────────────
@@ -184,15 +192,26 @@ export function getExercisesForSession(sessionId: number): Exercise[] {
   );
 }
 
-export function updateExercise(id: number, data: Partial<Pick<Exercise, 'machine_type' | 'muscle_group' | 'weight_kg' | 'sets' | 'reps' | 'notes'>>): void {
+export function updateExercise(id: number, data: Partial<Pick<Exercise,
+  'machine_type' | 'muscle_group' | 'weight_kg' | 'sets' | 'reps' | 'notes' |
+  'distance_km' | 'duration_min' | 'avg_speed_kmh' | 'avg_heart_rate' | 'calories' |
+  'floors_climbed' | 'incline_pct'
+>>): void {
   const fields: string[] = [];
   const values: (string | number | null)[] = [];
-  if (data.machine_type !== undefined) { fields.push('machine_type = ?'); values.push(data.machine_type); }
-  if (data.muscle_group !== undefined) { fields.push('muscle_group = ?'); values.push(data.muscle_group); }
-  if (data.weight_kg !== undefined)    { fields.push('weight_kg = ?');    values.push(data.weight_kg); }
-  if (data.sets !== undefined)         { fields.push('sets = ?');          values.push(data.sets); }
-  if (data.reps !== undefined)         { fields.push('reps = ?');          values.push(data.reps); }
-  if (data.notes !== undefined)        { fields.push('notes = ?');         values.push(data.notes); }
+  if (data.machine_type !== undefined)   { fields.push('machine_type = ?');   values.push(data.machine_type); }
+  if (data.muscle_group !== undefined)   { fields.push('muscle_group = ?');   values.push(data.muscle_group); }
+  if (data.weight_kg !== undefined)      { fields.push('weight_kg = ?');      values.push(data.weight_kg); }
+  if (data.sets !== undefined)           { fields.push('sets = ?');          values.push(data.sets); }
+  if (data.reps !== undefined)           { fields.push('reps = ?');          values.push(data.reps); }
+  if (data.notes !== undefined)          { fields.push('notes = ?');         values.push(data.notes); }
+  if (data.distance_km !== undefined)    { fields.push('distance_km = ?');    values.push(data.distance_km); }
+  if (data.duration_min !== undefined)   { fields.push('duration_min = ?');   values.push(data.duration_min); }
+  if (data.avg_speed_kmh !== undefined)  { fields.push('avg_speed_kmh = ?');  values.push(data.avg_speed_kmh); }
+  if (data.avg_heart_rate !== undefined) { fields.push('avg_heart_rate = ?'); values.push(data.avg_heart_rate); }
+  if (data.calories !== undefined)       { fields.push('calories = ?');       values.push(data.calories); }
+  if (data.floors_climbed !== undefined) { fields.push('floors_climbed = ?'); values.push(data.floors_climbed); }
+  if (data.incline_pct !== undefined)    { fields.push('incline_pct = ?');    values.push(data.incline_pct); }
   if (fields.length === 0) return;
   values.push(id);
   db.runSync(`UPDATE exercises SET ${fields.join(', ')} WHERE id = ?`, values);
@@ -206,8 +225,10 @@ export function addExercise(data: Omit<Exercise, 'id' | 'created_at'>): void {
   db.runSync(
     `INSERT INTO exercises
       (session_id, machine_id, machine_type, machine_confidence, machine_image_path,
-       muscle_group, weight_kg, weight_confidence, weight_image_path, sets, reps, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       muscle_group, weight_kg, weight_confidence, weight_image_path, sets, reps, notes,
+       distance_km, duration_min, avg_speed_kmh, avg_heart_rate, calories, floors_climbed,
+       incline_pct, cardio_image_path)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.session_id,
       data.machine_id    ?? null,
@@ -221,6 +242,14 @@ export function addExercise(data: Omit<Exercise, 'id' | 'created_at'>): void {
       data.sets  ?? null,
       data.reps  ?? null,
       data.notes ?? null,
+      data.distance_km      ?? null,
+      data.duration_min     ?? null,
+      data.avg_speed_kmh    ?? null,
+      data.avg_heart_rate   ?? null,
+      data.calories         ?? null,
+      data.floors_climbed   ?? null,
+      data.incline_pct      ?? null,
+      data.cardio_image_path ?? null,
     ]
   );
 }
@@ -459,5 +488,13 @@ export type Exercise = {
   sets: number | null;
   reps: number | null;
   notes: string | null;
+  distance_km?: number | null;
+  duration_min?: number | null;
+  avg_speed_kmh?: number | null;
+  avg_heart_rate?: number | null;
+  calories?: number | null;
+  floors_climbed?: number | null;
+  incline_pct?: number | null;
+  cardio_image_path?: string | null;
   created_at: string;
 };

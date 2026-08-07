@@ -92,7 +92,7 @@ export default function ScanMachineScreen() {
         nameplate_image_path: nameplateImagePath,
       });
       router.push({
-        pathname: '/exercise/scan-weight',
+        pathname: selectedGroup === 'Cardio' ? '/exercise/scan-cardio' : '/exercise/scan-weight',
         params: {
           sessionId,
           city:              city ?? '',

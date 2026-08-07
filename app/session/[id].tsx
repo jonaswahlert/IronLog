@@ -25,6 +25,13 @@ export default function SessionDetailScreen() {
   const [editSets, setEditSets]       = useState('');
   const [editReps, setEditReps]       = useState('');
   const [editGroup, setEditGroup]     = useState('');
+  const [editDistance, setEditDistance]   = useState('');
+  const [editDuration, setEditDuration]   = useState('');
+  const [editSpeed, setEditSpeed]         = useState('');
+  const [editHeartRate, setEditHeartRate] = useState('');
+  const [editCalories, setEditCalories]   = useState('');
+  const [editFloors, setEditFloors]       = useState('');
+  const [editIncline, setEditIncline]     = useState('');
   const [editSession, setEditSession]     = useState(false);
   const [editCity, setEditCity]           = useState('');
   const [editGym, setEditGym]             = useState('');
@@ -50,17 +57,38 @@ export default function SessionDetailScreen() {
     setEditSets(ex.sets != null ? String(ex.sets) : '');
     setEditReps(ex.reps != null ? String(ex.reps) : '');
     setEditGroup(ex.muscle_group ?? '');
+    setEditDistance(ex.distance_km != null ? String(ex.distance_km) : '');
+    setEditDuration(ex.duration_min != null ? String(ex.duration_min) : '');
+    setEditSpeed(ex.avg_speed_kmh != null ? String(ex.avg_speed_kmh) : '');
+    setEditHeartRate(ex.avg_heart_rate != null ? String(ex.avg_heart_rate) : '');
+    setEditCalories(ex.calories != null ? String(ex.calories) : '');
+    setEditFloors(ex.floors_climbed != null ? String(ex.floors_climbed) : '');
+    setEditIncline(ex.incline_pct != null ? String(ex.incline_pct) : '');
   }
 
   function saveEdit() {
     if (!editEx) return;
-    updateExercise(editEx.id, {
-      machine_type: editMachine.trim() || undefined,
-      muscle_group: editGroup || undefined,
-      weight_kg:    parseFloat(editWeight) || undefined,
-      sets:         parseInt(editSets) || undefined,
-      reps:         parseInt(editReps) || undefined,
-    });
+    if (editGroup === 'Cardio') {
+      updateExercise(editEx.id, {
+        machine_type:   editMachine.trim() || undefined,
+        muscle_group:   editGroup || undefined,
+        distance_km:    editDistance.trim()   ? parseFloat(editDistance)   : null,
+        duration_min:   editDuration.trim()   ? parseFloat(editDuration)   : null,
+        avg_speed_kmh:  editSpeed.trim()      ? parseFloat(editSpeed)      : null,
+        avg_heart_rate: editHeartRate.trim()  ? parseInt(editHeartRate)    : null,
+        calories:       editCalories.trim()   ? parseInt(editCalories)     : null,
+        floors_climbed: editFloors.trim()     ? parseInt(editFloors)       : null,
+        incline_pct:    editIncline.trim()    ? parseFloat(editIncline)    : null,
+      });
+    } else {
+      updateExercise(editEx.id, {
+        machine_type: editMachine.trim() || undefined,
+        muscle_group: editGroup || undefined,
+        weight_kg:    parseFloat(editWeight) || undefined,
+        sets:         parseInt(editSets) || undefined,
+        reps:         parseInt(editReps) || undefined,
+      });
+    }
     setEditEx(null);
     refresh();
   }
@@ -135,12 +163,16 @@ export default function SessionDetailScreen() {
           <View style={{ flex: 1 }}>
             <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? t('unknown_machine')}</Text>
             <Text style={s.exMeta}>
-              {ex.sets} set · {ex.reps} reps{ex.muscle_group ? `  ·  ${ex.muscle_group}` : ''}
+              {ex.muscle_group === 'Cardio'
+                ? [ex.distance_km != null && `${ex.distance_km} km`, ex.duration_min != null && `${ex.duration_min} min`, ex.avg_heart_rate != null && `${ex.avg_heart_rate} bpm`].filter(Boolean).join('  ·  ') || 'Cardio'
+                : `${ex.sets} set · ${ex.reps} reps${ex.muscle_group ? `  ·  ${ex.muscle_group}` : ''}`}
             </Text>
           </View>
-          <View style={s.weightBadge}>
-            <Text style={s.weightText}>{ex.weight_kg} kg</Text>
-          </View>
+          {ex.muscle_group !== 'Cardio' && (
+            <View style={s.weightBadge}>
+              <Text style={s.weightText}>{ex.weight_kg} kg</Text>
+            </View>
+          )}
           <TouchableOpacity style={s.delBtn} onPress={() => confirmDelete(ex.id)}>
             <Text style={s.delText}>✕</Text>
           </TouchableOpacity>
@@ -215,40 +247,79 @@ export default function SessionDetailScreen() {
               onChangeText={setEditMachine}
             />
 
-            <Text style={s.fieldLabel}>{t('weight')} (kg)</Text>
-            <TextInput
-              style={s.input}
-              placeholder="0"
-              placeholderTextColor="#7a85a0"
-              value={editWeight}
-              onChangeText={setEditWeight}
-              keyboardType="decimal-pad"
-            />
+            {editGroup === 'Cardio' ? (
+              <>
+                <View style={s.rowInputs}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>DISTANS (KM)</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editDistance} onChangeText={setEditDistance} keyboardType="decimal-pad" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>TID (MIN)</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editDuration} onChangeText={setEditDuration} keyboardType="decimal-pad" />
+                  </View>
+                </View>
+                <View style={s.rowInputs}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>HASTIGHET (KM/H)</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editSpeed} onChangeText={setEditSpeed} keyboardType="decimal-pad" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>PULS (BPM)</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editHeartRate} onChangeText={setEditHeartRate} keyboardType="number-pad" />
+                  </View>
+                </View>
+                <View style={s.rowInputs}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>KALORIER</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editCalories} onChangeText={setEditCalories} keyboardType="number-pad" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>VÅNINGAR/STEG</Text>
+                    <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editFloors} onChangeText={setEditFloors} keyboardType="number-pad" />
+                  </View>
+                </View>
+                <Text style={s.fieldLabel}>LUTNING/MOTSTÅND (%)</Text>
+                <TextInput style={s.input} placeholder="—" placeholderTextColor="#7a85a0" value={editIncline} onChangeText={setEditIncline} keyboardType="decimal-pad" />
+              </>
+            ) : (
+              <>
+                <Text style={s.fieldLabel}>{t('weight')} (kg)</Text>
+                <TextInput
+                  style={s.input}
+                  placeholder="0"
+                  placeholderTextColor="#7a85a0"
+                  value={editWeight}
+                  onChangeText={setEditWeight}
+                  keyboardType="decimal-pad"
+                />
 
-            <View style={s.rowInputs}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.fieldLabel}>SETS</Text>
-                <TextInput
-                  style={s.input}
-                  placeholder="3"
-                  placeholderTextColor="#7a85a0"
-                  value={editSets}
-                  onChangeText={setEditSets}
-                  keyboardType="number-pad"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.fieldLabel}>REPS</Text>
-                <TextInput
-                  style={s.input}
-                  placeholder="10"
-                  placeholderTextColor="#7a85a0"
-                  value={editReps}
-                  onChangeText={setEditReps}
-                  keyboardType="number-pad"
-                />
-              </View>
-            </View>
+                <View style={s.rowInputs}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>SETS</Text>
+                    <TextInput
+                      style={s.input}
+                      placeholder="3"
+                      placeholderTextColor="#7a85a0"
+                      value={editSets}
+                      onChangeText={setEditSets}
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={s.fieldLabel}>REPS</Text>
+                    <TextInput
+                      style={s.input}
+                      placeholder="10"
+                      placeholderTextColor="#7a85a0"
+                      value={editReps}
+                      onChangeText={setEditReps}
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                </View>
+              </>
+            )}
 
             <Text style={s.fieldLabel}>{t('muscle_group')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 8 }} style={{ marginBottom: 16 }}>
