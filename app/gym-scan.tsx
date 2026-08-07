@@ -369,7 +369,7 @@ const s = StyleSheet.create({
   scanningText:       { color: '#fff', fontSize: 14 },
   stepBadge:          { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
   stepBadgeText:      { color: '#fff', fontSize: 13, fontWeight: '700' },
-  machinePreview:     { width: '100%', height: 200, borderRadius: 14, marginBottom: 16, backgroundColor: '#242840' },
+  machinePreview:     { width: '100%', height: 260, borderRadius: 14, marginBottom: 16, backgroundColor: '#242840' },
   resultScroll:       { position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '70%' },
   resultCard:         { backgroundColor: '#141720', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
   resultHeader:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },

@@ -141,20 +141,19 @@ export default function SelectMachineScreen() {
             const last = getLastExerciseForMachine(machine.id);
             return (
               <TouchableOpacity key={machine.id} style={s.machineCard} onPress={() => selectMachine(machine)}>
-                <View style={s.machineThumb}>
+                <View style={s.machineImgWrap}>
                   {machine.image_path
-                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} />
-                    : <Text style={{ fontSize: 32 }}>🏋️</Text>
+                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="cover" />
+                    : <Text style={{ fontSize: 48 }}>🏋️</Text>
                   }
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={s.machineCardInfo}>
                   <Text style={s.machineName}>{machine.name}</Text>
                   {machine.city && <Text style={s.cityLabel}>{machine.city}{machine.gym ? ` · ${machine.gym}` : ''}</Text>}
                   {last && (
                     <Text style={s.lastUsed}>{last.weight_kg} kg · {last.sets}×{last.reps}</Text>
                   )}
                 </View>
-                <Text style={s.arrow}>›</Text>
               </TouchableOpacity>
             );
           })}
@@ -187,13 +186,13 @@ const s = StyleSheet.create({
   chipTextActive: { color: '#fff' },
   empty:          { fontSize: 14, color: '#7a85a0', paddingHorizontal: 24, paddingTop: 16 },
   groupLabel:     { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#f04a18', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  machineCard:    { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 10 },
-  machineThumb:   { width: 140, height: 140, borderRadius: 16, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  machineImg:     { width: 140, height: 140 },
-  machineName:    { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 2 },
-  cityLabel:      { fontSize: 11, color: '#7a85a0' },
-  lastUsed:       { fontSize: 12, color: '#1ecfa4', fontWeight: '600', marginTop: 2 },
-  arrow:          { fontSize: 22, color: '#7a85a0' },
+  machineCard:    { backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
+  machineImgWrap: { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  machineImg:     { width: '100%', height: '100%' },
+  machineCardInfo:{ padding: 14 },
+  machineName:    { fontSize: 16, fontWeight: '700', color: '#dde3f0', marginBottom: 2 },
+  cityLabel:      { fontSize: 12, color: '#7a85a0' },
+  lastUsed:       { fontSize: 13, color: '#1ecfa4', fontWeight: '600', marginTop: 2 },
   scanBtn:        { margin: 16, marginTop: 24, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 14, padding: 16, alignItems: 'center' },
   scanBtnText:    { color: '#dde3f0', fontSize: 15, fontWeight: '600' },
 });

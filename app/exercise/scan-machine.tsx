@@ -304,7 +304,7 @@ const s = StyleSheet.create({
   resultContainer:    { flex: 1, backgroundColor: '#0b0d13' },
   resultTopBar:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
   resultTitle:        { fontSize: 17, fontWeight: '700', color: '#dde3f0' },
-  machinePreview:     { width: '100%', height: 200, borderRadius: 16, marginBottom: 20, backgroundColor: '#1c2030' },
+  machinePreview:     { width: '100%', height: 260, borderRadius: 16, marginBottom: 20, backgroundColor: '#1c2030' },
   resultHeader:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   dot:                { width: 6, height: 6, borderRadius: 3, backgroundColor: '#1ecfa4' },
   resultHeaderText:   { fontSize: 11, fontWeight: '700', letterSpacing: 1, color: '#1ecfa4' },

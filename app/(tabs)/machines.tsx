@@ -170,25 +170,27 @@ export default function MachinesScreen() {
           <Text style={s.groupLabel}>{group.toUpperCase()}</Text>
           {(grouped[group] ?? []).map(machine => (
             <View key={machine.id} style={s.machineCard}>
-              <View style={s.machineThumb}>
+              <View style={s.machineImgWrap}>
                 {machine.image_path
-                  ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} />
-                  : <Text style={{ fontSize: 36 }}>🏋️</Text>
+                  ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="cover" />
+                  : <Text style={{ fontSize: 48 }}>🏋️</Text>
                 }
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={s.machineName}>{machine.name}</Text>
-                <View style={s.machineMeta}>
-                  {machine.gym  && <View style={s.tag}><Text style={s.tagText}>{machine.gym}</Text></View>}
-                  {machine.city && <View style={s.tag}><Text style={s.tagText}>{machine.city}</Text></View>}
+              <View style={s.machineCardRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.machineName}>{machine.name}</Text>
+                  <View style={s.machineMeta}>
+                    {machine.gym  && <View style={s.tag}><Text style={s.tagText}>{machine.gym}</Text></View>}
+                    {machine.city && <View style={s.tag}><Text style={s.tagText}>{machine.city}</Text></View>}
+                  </View>
                 </View>
+                <TouchableOpacity style={s.editBtn} onPress={() => openEdit(machine)}>
+                  <Text style={s.editText}>✎</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.delBtn} onPress={() => confirmDelete(machine)}>
+                  <Text style={s.delText}>✕</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={s.editBtn} onPress={() => openEdit(machine)}>
-                <Text style={s.editText}>✎</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={s.delBtn} onPress={() => confirmDelete(machine)}>
-                <Text style={s.delText}>✕</Text>
-              </TouchableOpacity>
             </View>
           ))}
         </View>
@@ -288,10 +290,11 @@ const s = StyleSheet.create({
   emptyTitle:      { fontSize: 18, fontWeight: '700', color: '#dde3f0', marginBottom: 8 },
   emptySub:        { fontSize: 14, color: '#7a85a0', textAlign: 'center', lineHeight: 20 },
   groupLabel:      { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#f04a18', paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 },
-  machineCard:     { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 10 },
-  machineThumb:    { width: 104, height: 104, borderRadius: 14, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  machineImg:      { width: 104, height: 104 },
-  machineName:     { fontSize: 15, fontWeight: '700', color: '#dde3f0', marginBottom: 6 },
+  machineCard:     { backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
+  machineImgWrap:  { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  machineImg:      { width: '100%', height: '100%' },
+  machineCardRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14 },
+  machineName:     { fontSize: 16, fontWeight: '700', color: '#dde3f0', marginBottom: 6 },
   machineMeta:     { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   tag:             { backgroundColor: '#242840', borderWidth: 1, borderColor: '#22273a', borderRadius: 100, paddingHorizontal: 8, paddingVertical: 2 },
   tagText:         { fontSize: 11, fontWeight: '600', color: '#7a85a0' },
