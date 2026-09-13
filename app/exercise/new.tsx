@@ -87,7 +87,7 @@ export default function NewExerciseScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Text style={s.backText}>←</Text>
@@ -242,10 +242,10 @@ export default function NewExerciseScreen() {
         </>
       )}
 
-      <TouchableOpacity style={[s.saveBtn, !canSave && s.saveBtnDisabled]} onPress={save} disabled={!canSave || saving}>
-        <Text style={s.saveBtnText}>{saving ? t('saving') : t('save_exercise')}</Text>
-      </TouchableOpacity>
     </ScrollView>
+    <TouchableOpacity style={[s.saveBtn, !canSave && s.saveBtnDisabled]} onPress={save} disabled={!canSave || saving}>
+      <Text style={s.saveBtnText}>{saving ? t('saving') : t('save_exercise')}</Text>
+    </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }

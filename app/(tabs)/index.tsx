@@ -340,38 +340,6 @@ export default function SessionScreen() {
           </View>
         )}
 
-        {exercises.length > 0 && (
-          <>
-            <Text style={s.sectionLabel}>{t('completed_exercises')}</Text>
-            {exercises.map(ex => (
-              <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
-                <View style={s.exThumb}>
-                  {ex.machine_image_path
-                    ? <Image source={{ uri: resolveImagePath(ex.machine_image_path)! }} style={s.exThumbImg} />
-                    : <Text style={{ fontSize: 22 }}>🏋️</Text>
-                  }
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? t('unknown_machine')}</Text>
-                  <Text style={s.exMeta}>
-                    {ex.muscle_group === 'Cardio'
-                      ? [ex.distance_km != null && `${ex.distance_km} km`, ex.duration_min != null && `${ex.duration_min} min`, ex.avg_heart_rate != null && `${ex.avg_heart_rate} bpm`].filter(Boolean).join('  ·  ') || 'Cardio'
-                      : `${ex.sets} set · ${ex.reps} reps${ex.muscle_group ? `  ·  ${ex.muscle_group}` : ''}`}
-                  </Text>
-                </View>
-                {ex.muscle_group !== 'Cardio' && (
-                  <View style={s.weightBadge}>
-                    <Text style={s.weightText}>{ex.weight_kg} kg</Text>
-                  </View>
-                )}
-                <TouchableOpacity style={s.deleteBtn} onPress={() => confirmDeleteExercise(ex.id)}>
-                  <Text style={s.deleteText}>✕</Text>
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
-          </>
-        )}
-
         {!session ? (
           <>
             {/* ── Guide entry point – collapsed behind a button ── */}
@@ -433,6 +401,38 @@ export default function SessionScreen() {
             <TouchableOpacity style={s.endBtn} onPress={handleEndSession}>
               <Text style={s.endBtnText}>{t('end_session')}</Text>
             </TouchableOpacity>
+          </>
+        )}
+
+        {exercises.length > 0 && (
+          <>
+            <Text style={s.sectionLabel}>{t('completed_exercises')}</Text>
+            {exercises.map(ex => (
+              <TouchableOpacity key={ex.id} style={s.exCard} onPress={() => openEdit(ex)}>
+                <View style={s.exThumb}>
+                  {ex.machine_image_path
+                    ? <Image source={{ uri: resolveImagePath(ex.machine_image_path)! }} style={s.exThumbImg} />
+                    : <Text style={{ fontSize: 22 }}>🏋️</Text>
+                  }
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.exName} numberOfLines={1}>{ex.machine_type ?? t('unknown_machine')}</Text>
+                  <Text style={s.exMeta}>
+                    {ex.muscle_group === 'Cardio'
+                      ? [ex.distance_km != null && `${ex.distance_km} km`, ex.duration_min != null && `${ex.duration_min} min`, ex.avg_heart_rate != null && `${ex.avg_heart_rate} bpm`].filter(Boolean).join('  ·  ') || 'Cardio'
+                      : `${ex.sets} set · ${ex.reps} reps${ex.muscle_group ? `  ·  ${ex.muscle_group}` : ''}`}
+                  </Text>
+                </View>
+                {ex.muscle_group !== 'Cardio' && (
+                  <View style={s.weightBadge}>
+                    <Text style={s.weightText}>{ex.weight_kg} kg</Text>
+                  </View>
+                )}
+                <TouchableOpacity style={s.deleteBtn} onPress={() => confirmDeleteExercise(ex.id)}>
+                  <Text style={s.deleteText}>✕</Text>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
           </>
         )}
       </ScrollView>

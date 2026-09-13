@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Modal, Dimensions } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import {
   getAllMachines, getCities, getLastExerciseForMachine, getLastCity,
@@ -16,6 +16,7 @@ export default function SelectMachineScreen() {
   const [cities, setCities]           = useState<string[]>([]);
   const [activeCity, setActiveCity]   = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [zoomImage, setZoomImage]     = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => {
     const ms = getAllMachines();
@@ -127,7 +128,18 @@ export default function SelectMachineScreen() {
               <TouchableOpacity key={machine.id} style={s.machineCard} onPress={() => selectMachine(machine)}>
                 <View style={s.machineImgWrap}>
                   {machine.image_path
-                    ? <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="contain" />
+                    ? (
+                      <TouchableOpacity
+                        style={s.machineImgTouchable}
+                        activeOpacity={0.85}
+                        onPress={() => setZoomImage(resolveImagePath(machine.image_path))}
+                      >
+                        <Image source={{ uri: resolveImagePath(machine.image_path)! }} style={s.machineImg} resizeMode="contain" />
+                        <View style={s.zoomBadge}>
+                          <Text style={s.zoomBadgeText}>🔍</Text>
+                        </View>
+                      </TouchableOpacity>
+                    )
                     : <Text style={{ fontSize: 48 }}>🏋️</Text>
                   }
                 </View>
@@ -150,9 +162,28 @@ export default function SelectMachineScreen() {
       >
         <Text style={s.scanBtnText}>{t('scan_new_machine_btn')}</Text>
       </TouchableOpacity>
+
+      <Modal visible={!!zoomImage} transparent animationType="fade" onRequestClose={() => setZoomImage(null)}>
+        <View style={s.zoomOverlay}>
+          <TouchableOpacity style={s.zoomCloseBtn} onPress={() => setZoomImage(null)}>
+            <Text style={s.zoomCloseText}>✕</Text>
+          </TouchableOpacity>
+          <ScrollView
+            style={{ flex: 1, width: '100%' }}
+            contentContainerStyle={s.zoomScrollContent}
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            centerContent
+          >
+            {zoomImage && <Image source={{ uri: zoomImage }} style={s.zoomImage} resizeMode="contain" />}
+          </ScrollView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
+
+const SCREEN = Dimensions.get('window');
 
 const s = StyleSheet.create({
   container:      { flex: 1, backgroundColor: '#0b0d13' },
@@ -172,7 +203,15 @@ const s = StyleSheet.create({
   groupLabel:     { fontSize: 11, fontWeight: '700', letterSpacing: 1.2, color: '#f04a18', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   machineCard:    { backgroundColor: '#1c2030', borderWidth: 1, borderColor: '#22273a', borderRadius: 16, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
   machineImgWrap: { width: '100%', aspectRatio: 4 / 3, backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  machineImgTouchable: { width: '100%', height: '100%' },
   machineImg:     { width: '100%', height: '100%' },
+  zoomBadge:      { position: 'absolute', bottom: 8, right: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(11,13,19,.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,.15)', alignItems: 'center', justifyContent: 'center' },
+  zoomBadgeText:  { fontSize: 15 },
+  zoomOverlay:    { flex: 1, backgroundColor: 'rgba(6,7,11,.97)', alignItems: 'center', justifyContent: 'center' },
+  zoomScrollContent: { flexGrow: 1, width: SCREEN.width, alignItems: 'center', justifyContent: 'center' },
+  zoomImage:      { width: SCREEN.width, height: SCREEN.height * 0.85 },
+  zoomCloseBtn:   { position: 'absolute', top: 56, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(28,32,48,.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,.15)', alignItems: 'center', justifyContent: 'center' },
+  zoomCloseText:  { color: '#dde3f0', fontSize: 18, fontWeight: '700' },
   machineCardInfo:{ padding: 14 },
   machineName:    { fontSize: 16, fontWeight: '700', color: '#dde3f0', marginBottom: 2 },
   cityLabel:      { fontSize: 12, color: '#7a85a0' },
