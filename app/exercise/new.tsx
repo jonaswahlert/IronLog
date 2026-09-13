@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, StyleSheet, Keyboard, Platform } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addExercise } from '../../lib/database';
 import { useTranslation } from '../../lib/i18n';
@@ -26,6 +26,15 @@ export default function NewExerciseScreen() {
   const [setsInput, setSetsInput]       = useState(String(Number(defaultSets) || 3));
   const [repsInput, setRepsInput]       = useState(String(Number(defaultReps) || 10));
   const [saving, setSaving]             = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, e => setKeyboardHeight(e.endCoordinates.height));
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   const [distance, setDistance]   = useState('');
   const [duration, setDuration]   = useState('');
@@ -86,7 +95,7 @@ export default function NewExerciseScreen() {
   const canSave = machineInput.trim() !== '' && (isCardio || weightInput.trim() !== '');
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={{ flex: 1 }}>
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps="handled">
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
@@ -243,10 +252,14 @@ export default function NewExerciseScreen() {
       )}
 
     </ScrollView>
-    <TouchableOpacity style={[s.saveBtn, !canSave && s.saveBtnDisabled]} onPress={save} disabled={!canSave || saving}>
+    <TouchableOpacity
+      style={[s.saveBtn, { marginBottom: keyboardHeight + 16 }, !canSave && s.saveBtnDisabled]}
+      onPress={save}
+      disabled={!canSave || saving}
+    >
       <Text style={s.saveBtnText}>{saving ? t('saving') : t('save_exercise')}</Text>
     </TouchableOpacity>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
