@@ -24,7 +24,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "jonas@wahlert.se"
+        "appleId": "jonas@wahlert.se",
+        "ascAppId": "6787896418"
       }
     }
   }
