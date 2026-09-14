@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IronLog Integritetspolicy</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbf9f7;
+    --surface: #ffffff;
+    --ink: #14161c;
+    --ink-2: #5b616f;
+    --line: #e4e1db;
+    --accent: #f04a18;
+    --accent-ink: #ffffff;
+    --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+    --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0d13;
+      --surface: #141720;
+      --ink: #dde3f0;
+      --ink-2: #7a85a0;
+      --line: #22273a;
+      --accent: #f04a18;
+      --accent-ink: #ffffff;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    padding: 0 20px;
+    padding-block: 48px 80px;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 28px;
+    margin-bottom: 32px;
+    border-bottom: 1.5px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent-ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.01em;
+  }
+  .doc-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .lang-toggle {
+    display: inline-flex;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .lang-toggle button {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border: none;
+    background: transparent;
+    color: var(--ink-2);
+    padding: 5px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .lang-toggle button.active { background: var(--accent); color: var(--accent-ink); }
+  .lang-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(34px, 7vw, 46px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  .effective {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-2);
+    margin: 0 0 40px;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.005em;
+    margin: 44px 0 12px;
+    padding-top: 4px;
+  }
+  h2 .num { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 10px; }
+
+  p { margin: 0 0 14px; max-width: 62ch; }
+  ul { margin: 0 0 14px; padding-left: 22px; max-width: 62ch; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 600; }
+  a { color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
+
+  .callout {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-left: 4px solid var(--accent);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin: 0 0 14px;
+    max-width: 62ch;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+
+  table { border-collapse: collapse; width: 100%; max-width: 62ch; margin: 4px 0 18px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 14.5px; vertical-align: top; }
+  th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-2); font-weight: 500; }
+  td:first-child { font-weight: 600; white-space: nowrap; }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1.5px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  footer a { color: inherit; }
+
+  @media (max-width: 480px) {
+    header { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="mark">I</div>
+      <div>
+        <div class="brand-name">IronLog</div>
+        <div class="doc-label" id="doc-label">Integritetspolicy</div>
+      </div>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button type="button" id="btn-sv" class="active" onclick="setLang('sv')">SV</button>
+      <button type="button" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+  </header>
+
+  <div id="sv">
+    <h1>Integritetspolicy för IronLog</h1>
+    <p class="effective">Gäller från 14 september 2026</p>
+
+    <div class="callout">
+      <p><strong>Kort sammanfattat:</strong> IronLog sparar all din träningsdata lokalt på din egen telefon — det finns inget konto och ingen server. Foton du tar (av gymmaskiner eller din egen kropp) skickas till Google Gemini för AI-analys, och det är det enda som lämnar enheten.</p>
+    </div>
+
+    <h2><span class="num">01</span>Vem är ansvarig</h2>
+    <p>IronLog är en fristående app utvecklad och drivs av en enskild utvecklare, inte av något företag. Kontaktuppgifter finns längst ner på den här sidan.</p>
+
+    <h2><span class="num">02</span>Vilken data appen hanterar</h2>
+    <p>IronLog kräver inget konto och ingen inloggning. All data du matar in stannar lokalt i appens egen databas på din telefon:</p>
+    <table>
+      <tr><th>Typ av data</th><th>Exempel</th></tr>
+      <tr><td>Profiluppgifter</td><td>Namn, ålder, längd, vikt, träningsmål</td></tr>
+      <tr><td>Träningshistorik</td><td>Pass, övningar, vikter, set, reps, konditionsdata</td></tr>
+      <tr><td>Maskinregister</td><td>Foton och namn på gymmaskiner du sparat</td></tr>
+      <tr><td>Progressbilder</td><td>Foton du själv valt att lägga till för att följa förändring över tid</td></tr>
+    </table>
+    <p>Ingen av denna data skickas till oss eller lagras på någon server vi kontrollerar.</p>
+
+    <h2><span class="num">03</span>Kamera och foton — vad som skickas vidare</h2>
+    <p>När du använder någon av apppens AI-funktioner skickas det aktuella fotot (och i vissa fall en kort textbeskrivning) till <strong>Google Gemini API</strong> för analys:</p>
+    <ul>
+      <li>Foto av en gymmaskin → för att identifiera vilken maskin det är</li>
+      <li>Foto av en namnskylt → för att läsa av text på maskinen</li>
+      <li>Progressbilder → för att jämföra visuell förändring mellan två foton</li>
+      <li>Uppgifter om mål/dagar/tid → för att generera ett träningsprogram i textform</li>
+    </ul>
+    <p>Detta är den enda data som lämnar din enhet. Google behandlar den enligt <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Gemini API:s användarvillkor</a> och <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Googles integritetspolicy</a>. Vi sparar inte kopior av det som skickas till Google.</p>
+
+    <h2><span class="num">04</span>Vad vi inte gör</h2>
+    <ul>
+      <li>Inga annonser eller annonsnätverk</li>
+      <li>Ingen analys- eller spårningsteknik från tredje part</li>
+      <li>Ingen försäljning eller delning av data för marknadsföring</li>
+      <li>Ingen data lämnar enheten förutom det som beskrivs i avsnitt 3</li>
+    </ul>
+
+    <h2><span class="num">05</span>Hur du raderar din data</h2>
+    <p>Eftersom all data lagras lokalt raderas den automatiskt om du avinstallerar appen. Det finns inget konto att radera separat, eftersom inget konto någonsin skapats.</p>
+
+    <h2><span class="num">06</span>Barn</h2>
+    <p>IronLog riktar sig inte till barn under 13 år och är inte medvetet utformad för att samla in uppgifter från barn.</p>
+
+    <h2><span class="num">07</span>Ändringar av policyn</h2>
+    <p>Om den här policyn ändras uppdateras datumet högst upp på sidan. Väsentliga ändringar kommer att beskrivas tydligt här.</p>
+
+    <h2><span class="num">08</span>Kontakt</h2>
+    <p>Frågor om integritet eller den här policyn: <a href="mailto:info@wahlert.se">info@wahlert.se</a></p>
+  </div>
+
+  <div id="en" hidden>
+    <h1>IronLog Privacy Policy</h1>
+    <p class="effective">Effective September 14, 2026</p>
+
+    <div class="callout">
+      <p><strong>Short version:</strong> IronLog stores all your training data locally on your own phone — there's no account and no server. Photos you take (of gym machines or your own body) are sent to Google Gemini for AI analysis, and that's the only thing that ever leaves the device.</p>
+    </div>
+
+    <h2><span class="num">01</span>Who's responsible</h2>
+    <p>IronLog is an independent app built and run by a single developer, not a company. Contact details are at the bottom of this page.</p>
+
+    <h2><span class="num">02</span>What data the app handles</h2>
+    <p>IronLog doesn't require an account or sign-in. Everything you enter stays local, in the app's own database on your phone:</p>
+    <table>
+      <tr><th>Type of data</th><th>Examples</th></tr>
+      <tr><td>Profile info</td><td>Name, age, height, weight, training goal</td></tr>
+      <tr><td>Training history</td><td>Sessions, exercises, weights, sets, reps, cardio data</td></tr>
+      <tr><td>Machine registry</td><td>Photos and names of gym machines you've saved</td></tr>
+      <tr><td>Progress photos</td><td>Photos you choose to add to track change over time</td></tr>
+    </table>
+    <p>None of this data is sent to us or stored on any server we control.</p>
+
+    <h2><span class="num">03</span>Camera and photos — what gets sent onward</h2>
+    <p>When you use one of the app's AI features, the relevant photo (and sometimes a short text description) is sent to <strong>Google's Gemini API</strong> for analysis:</p>
+    <ul>
+      <li>Photo of a gym machine → to identify which machine it is</li>
+      <li>Photo of a name plate → to read text on the machine</li>
+      <li>Progress photos → to compare visual change between two photos</li>
+      <li>Goal/days/time inputs → to generate a text-based training program</li>
+    </ul>
+    <p>This is the only data that ever leaves your device. Google processes it under the <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noopener">Gemini API Terms</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>. We don't keep copies of what's sent to Google.</p>
+
+    <h2><span class="num">04</span>What we don't do</h2>
+    <ul>
+      <li>No ads or ad networks</li>
+      <li>No third-party analytics or tracking</li>
+      <li>No selling or sharing data for marketing</li>
+      <li>No data leaves the device beyond what's described in section 3</li>
+    </ul>
+
+    <h2><span class="num">05</span>Deleting your data</h2>
+    <p>Since everything is stored locally, uninstalling the app deletes it. There's no separate account to delete, because no account was ever created.</p>
+
+    <h2><span class="num">06</span>Children</h2>
+    <p>IronLog isn't directed at children under 13 and isn't knowingly designed to collect data from children.</p>
+
+    <h2><span class="num">07</span>Changes to this policy</h2>
+    <p>If this policy changes, the date at the top of the page will be updated. Material changes will be clearly described here.</p>
+
+    <h2><span class="num">08</span>Contact</h2>
+    <p>Questions about privacy or this policy: <a href="mailto:info@wahlert.se">info@wahlert.se</a></p>
+  </div>
+
+  <footer>
+    IronLog · <span id="foot-date">14 september 2026</span>
+  </footer>
+</div>
+
+<script>
+  function setLang(lang) {
+    var sv = lang === 'sv';
+    document.getElementById('sv').hidden = !sv;
+    document.getElementById('en').hidden = sv;
+    document.getElementById('btn-sv').classList.toggle('active', sv);
+    document.getElementById('btn-en').classList.toggle('active', !sv);
+    document.getElementById('doc-label').textContent = sv ? 'Integritetspolicy' : 'Privacy Policy';
+    document.getElementById('foot-date').textContent = sv ? '14 september 2026' : 'September 14, 2026';
+    document.documentElement.lang = lang;
+  }
+</script>
+</body>
+</html>
