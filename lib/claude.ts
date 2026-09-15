@@ -73,16 +73,25 @@ export type ProgramDay = {
   exercises: ProgramExercise[];
 };
 
+export type ProgramMachine = { name: string; muscleGroup: string | null };
+
+// Raw shape the model is asked to return: a machine INDEX (into the numbered
+// list we give it), not a name — the model's own text is never trusted as an
+// exercise name, so it can't hallucinate a machine that isn't registered.
+type RawProgramExercise = { machineIndex: number; sets?: number; reps?: string; restSec?: number; tip?: string };
+type RawProgramDay = { dayNumber: number; name: string; isRest: boolean; type: string; exercises: RawProgramExercise[] };
+
 export async function generateProgram(params: {
   goal: string;
   daysPerWeek: number;
   minutesPerSession: number;
-  machines: string[];
+  machines: ProgramMachine[];
   language: 'sv' | 'en';
 }): Promise<{ days: ProgramDay[]; error?: string }> {
   const { goal, daysPerWeek, minutesPerSession, machines, language } = params;
   const numEx = minutesPerSession <= 30 ? '3-4' : minutesPerSession <= 45 ? '4-5' : minutesPerSession <= 60 ? '5-6' : '6-8';
-  const machineList = machines.slice(0, 40).join(', ');
+  const numbered = machines.slice(0, 40);
+  const machineList = numbered.map((m, i) => `${i + 1}. ${m.name}${m.muscleGroup ? ` (${m.muscleGroup})` : ''}`).join('\n');
 
   const prompt = language === 'sv'
     ? `Du är en personlig tränare. Skapa ett träningsprogram.
@@ -91,24 +100,26 @@ Mål: ${goal}
 Pass per vecka: ${daysPerWeek}
 Tid per pass: ${minutesPerSession} minuter
 
-Detta är de ENDA maskiner/övningar som finns tillgängliga (redan registrerade av användaren): ${machineList}
+Tillgängliga maskiner (numrerade, med muskelgrupp inom parentes):
+${machineList}
 
-Svara BARA med JSON, ingen markdown, ingen förklaring:
-{"days":[{"dayNumber":1,"name":"Måndag","isRest":false,"type":"Tryckmuskler","muscles":"Bröst · Axlar · Baksida arm","exercises":[{"name":"Bröstpress","sets":3,"reps":"10-12","restSec":90,"tip":"Håll rygg mot sitsen"}]},{"dayNumber":2,"name":"Tisdag","isRest":true,"type":"Vila","muscles":"","exercises":[]}]}
+Svara BARA med JSON, ingen markdown, ingen förklaring. Referera varje övning med "machineIndex" (numret från listan ovan) — INTE med namn:
+{"days":[{"dayNumber":1,"name":"Måndag","isRest":false,"type":"Tryckmuskler","exercises":[{"machineIndex":1,"sets":3,"reps":"10-12","restSec":90,"tip":"Håll rygg mot sitsen"}]},{"dayNumber":2,"name":"Tisdag","isRest":true,"type":"Vila","exercises":[]}]}
 
-Regler: exakt 7 dagar, ${daysPerWeek} träningsdagar fördelade jämnt, ${numEx} övningar per pass, tryck/drag/ben-uppdelning. VIKTIGT: använd ENDAST övningsnamn som finns exakt i listan ovan, skriv namnet exakt som det står — hitta inte på nya övningar och byt inte namn på dem. Om listan har färre övningar än vad som behövs, återanvänd samma övningar på flera pass eller dagar istället för att hitta på nya.`
+Regler: exakt 7 dagar, ${daysPerWeek} träningsdagar fördelade jämnt, ${numEx} övningar per pass, tryck/drag/ben-uppdelning. VIKTIGT: "machineIndex" måste vara ett nummer från listan ovan (1 till ${numbered.length}) — hitta inte på egna nummer eller namn. Om listan har färre maskiner än vad som behövs, återanvänd samma flera gånger istället för att hitta på nya.`
     : `You are a personal trainer. Create a training program.
 
 Goal: ${goal}
 Sessions per week: ${daysPerWeek}
 Time per session: ${minutesPerSession} minutes
 
-These are the ONLY machines/exercises available (already registered by the user): ${machineList}
+Available machines (numbered, with muscle group in parentheses):
+${machineList}
 
-Respond ONLY with JSON, no markdown, no explanation:
-{"days":[{"dayNumber":1,"name":"Monday","isRest":false,"type":"Push muscles","muscles":"Chest · Shoulders · Triceps","exercises":[{"name":"Chest Press","sets":3,"reps":"10-12","restSec":90,"tip":"Keep back against pad"}]},{"dayNumber":2,"name":"Tuesday","isRest":true,"type":"Rest","muscles":"","exercises":[]}]}
+Respond ONLY with JSON, no markdown, no explanation. Reference each exercise by "machineIndex" (the number from the list above) — NOT by name:
+{"days":[{"dayNumber":1,"name":"Monday","isRest":false,"type":"Push muscles","exercises":[{"machineIndex":1,"sets":3,"reps":"10-12","restSec":90,"tip":"Keep back against pad"}]},{"dayNumber":2,"name":"Tuesday","isRest":true,"type":"Rest","exercises":[]}]}
 
-Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exercises per session, push/pull/legs split. IMPORTANT: use ONLY exercise names that appear exactly in the list above, spelled exactly as given — do not invent new exercises or rename them. If the list has fewer exercises than needed, reuse the same ones across multiple sessions/days instead of making up new ones.`;
+Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exercises per session, push/pull/legs split. IMPORTANT: "machineIndex" must be a number from the list above (1 to ${numbered.length}) — do not invent your own numbers or names. If the list has fewer machines than needed, reuse the same ones across multiple sessions/days instead of making up new ones.`;
 
   try {
     const res = await fetch(GEMINI_BASE, {
@@ -123,13 +134,53 @@ Rules: exactly 7 days, ${daysPerWeek} training days spread evenly, ${numEx} exer
     const text: string | undefined = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) return { days: [], error: JSON.stringify(data.error ?? data) };
     const match = text.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        const parsed = JSON.parse(match[0]);
-        if (Array.isArray(parsed.days)) return { days: parsed.days };
-      } catch {}
+    if (!match) return { days: [], error: 'Could not parse AI response' };
+
+    let parsed: { days?: RawProgramDay[] };
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      return { days: [], error: 'Could not parse AI response' };
     }
-    return { days: [], error: 'Could not parse AI response' };
+    if (!Array.isArray(parsed.days)) return { days: [], error: 'Could not parse AI response' };
+
+    // Resolve machineIndex -> the real, registered machine. Any exercise
+    // referencing an out-of-range index is dropped rather than kept with a
+    // hallucinated or missing name — this is what actually guarantees every
+    // exercise in the result is a machine the user has registered.
+    const days: ProgramDay[] = parsed.days.map((d) => {
+      const exercises: ProgramExercise[] = (d.exercises ?? [])
+        .map((ex): ProgramExercise | null => {
+          const machine = numbered[ex.machineIndex - 1];
+          if (!machine) return null;
+          return {
+            name: machine.name,
+            sets: typeof ex.sets === 'number' && ex.sets > 0 ? ex.sets : 3,
+            reps: ex.reps || '10-12',
+            restSec: typeof ex.restSec === 'number' && ex.restSec > 0 ? ex.restSec : 90,
+            tip: ex.tip ?? '',
+          };
+        })
+        .filter((ex): ex is ProgramExercise => ex !== null);
+
+      // Muscle groups shown for the day are computed from the machines
+      // actually used (after filtering above), not trusted from the model.
+      const usedMachines = (d.exercises ?? [])
+        .map((ex) => numbered[ex.machineIndex - 1])
+        .filter((m): m is ProgramMachine => !!m);
+      const muscles = [...new Set(usedMachines.map((m) => m.muscleGroup).filter(Boolean))].join('  ·  ');
+
+      return {
+        dayNumber: d.dayNumber,
+        name: d.name,
+        isRest: d.isRest || exercises.length === 0,
+        type: d.type,
+        muscles,
+        exercises,
+      };
+    });
+
+    return { days };
   } catch (e: any) {
     return { days: [], error: e?.message ?? 'Network error' };
   }

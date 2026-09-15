@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, TextInput, KeyboardAvoidingView, Platform,
+  Image, Modal, Dimensions,
 } from 'react-native';
 import { useFocusEffect, router } from 'expo-router';
 import { useLang } from '../../lib/LanguageContext';
@@ -12,6 +13,7 @@ import {
   renameProgramById, SavedProgram, Machine,
 } from '../../lib/database';
 import { generateProgram, ProgramDay, ProgramExercise } from '../../lib/claude';
+import { resolveImagePath } from '../../lib/imagePaths';
 
 type ViewState = 'list' | 'wizard' | 'loading' | 'name' | 'detail' | 'manualTimeChoice' | 'manualBudgetPick' | 'manualBuild';
 
@@ -164,6 +166,7 @@ export default function ProgramScreen() {
   const [manualDayIndex, setManualDayIndex]     = useState(0);
   const [manualDays, setManualDays]             = useState<ManualExercise[][]>([]);
   const [currentSelection, setCurrentSelection] = useState<ManualExercise[]>([]);
+  const [zoomImage, setZoomImage]               = useState<string | null>(null);
 
   // After generation
   const [genDays, setGenDays]         = useState<ProgramDay[]>([]);
@@ -192,7 +195,7 @@ export default function ProgramScreen() {
   async function generate() {
     if (!goal || !days || !minutes) return;
     setView('loading');
-    const machines = getAllMachines().map(m => m.name);
+    const machines = getAllMachines().map(m => ({ name: m.name, muscleGroup: m.muscle_group }));
     const result = await generateProgram({ goal, daysPerWeek: days, minutesPerSession: minutes, machines, language: lang });
     if (result.error || result.days.length === 0) {
       Alert.alert(c.errTitle, c.errMsg);
@@ -341,7 +344,7 @@ export default function ProgramScreen() {
     setView('detail');
   }
 
-  const canNext = step === 0 ? !!goal : step === 1 ? !!days : step === 2 ? !!mode : !!minutes;
+  const canNext = step === 0 ? !!mode : step === 1 ? !!goal : step === 2 ? !!days : !!minutes;
 
   // ── Loading ────────────────────────────────────────────
   if (view === 'loading') {
@@ -496,6 +499,36 @@ export default function ProgramScreen() {
 
           {step === 0 && (
             <>
+              <Text style={s.wizQ}>{lang === 'sv' ? 'Hur vill du bygga programmet?' : 'How do you want to build the program?'}</Text>
+              <View style={s.modeChoiceRow}>
+                <TouchableOpacity
+                  style={[s.modeChoiceCard, mode === 'ai' && s.modeChoiceCardSel]}
+                  onPress={() => setMode('ai')}
+                >
+                  {mode === 'ai' && <Text style={s.modeChoiceCheck}>✓</Text>}
+                  <Text style={s.modeChoiceIcon}>🤖</Text>
+                  <Text style={s.modeChoiceTitle}>{lang === 'sv' ? 'Låt AI skapa' : 'Let AI create'}</Text>
+                  <Text style={s.modeChoiceSub}>
+                    {lang === 'sv' ? 'AI bygger schemat åt dig, bara från dina registrerade maskiner' : 'AI builds the schedule for you, only from your registered machines'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.modeChoiceCard, mode === 'manual' && s.modeChoiceCardSel]}
+                  onPress={() => setMode('manual')}
+                >
+                  {mode === 'manual' && <Text style={s.modeChoiceCheck}>✓</Text>}
+                  <Text style={s.modeChoiceIcon}>✋</Text>
+                  <Text style={s.modeChoiceTitle}>{lang === 'sv' ? 'Välj själv' : 'Choose yourself'}</Text>
+                  <Text style={s.modeChoiceSub}>
+                    {lang === 'sv' ? 'Du väljer maskiner för varje träningsdag manuellt' : 'You pick machines for each training day manually'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+
+          {step === 1 && (
+            <>
               <Text style={s.wizQ}>{c.step1q}</Text>
               {c.goals.map(g => (
                 <TouchableOpacity
@@ -514,7 +547,7 @@ export default function ProgramScreen() {
             </>
           )}
 
-          {step === 1 && (
+          {step === 2 && (
             <>
               <Text style={s.wizQ}>{c.step2q}</Text>
               <View style={s.grid}>
@@ -529,28 +562,6 @@ export default function ProgramScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <Text style={s.wizQ}>{lang === 'sv' ? 'Hur vill du bygga programmet?' : 'How do you want to build the program?'}</Text>
-              <TouchableOpacity style={[s.optCard, mode === 'ai' && s.optCardSel]} onPress={() => setMode('ai')}>
-                <Text style={s.optIcon}>🤖</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.optTitle}>{lang === 'sv' ? 'Låt AI välja' : 'Let AI choose'}</Text>
-                  <Text style={s.optSub}>{lang === 'sv' ? 'AI väljer bland dina registrerade maskiner' : 'AI picks from your registered machines'}</Text>
-                </View>
-                {mode === 'ai' && <Text style={s.check}>✓</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.optCard, mode === 'manual' && s.optCardSel]} onPress={() => setMode('manual')}>
-                <Text style={s.optIcon}>✋</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={s.optTitle}>{lang === 'sv' ? 'Välj maskiner själv' : 'Choose machines yourself'}</Text>
-                  <Text style={s.optSub}>{lang === 'sv' ? 'Bygg varje träningsdag manuellt' : 'Build each training day manually'}</Text>
-                </View>
-                {mode === 'manual' && <Text style={s.check}>✓</Text>}
-              </TouchableOpacity>
             </>
           )}
 
@@ -727,12 +738,28 @@ export default function ProgramScreen() {
               <Text style={s.pickGroupLabel}>{group.toUpperCase()}</Text>
               {grouped[group].map(machine => {
                 const selected = currentSelection.some(e => e.machineId === machine.id);
+                const imgUri = machine.image_path ? resolveImagePath(machine.image_path) : null;
                 return (
                   <TouchableOpacity
                     key={machine.id}
                     style={[s.pickRow, selected && s.pickRowSel]}
                     onPress={() => toggleManualMachine(machine)}
                   >
+                    {imgUri ? (
+                      <TouchableOpacity
+                        style={s.pickThumbWrap}
+                        onPress={(e) => { e.stopPropagation(); setZoomImage(imgUri); }}
+                      >
+                        <Image source={{ uri: imgUri }} style={s.pickThumb} resizeMode="cover" />
+                        <View style={s.pickThumbZoomBadge}>
+                          <Text style={s.pickThumbZoomText}>🔍</Text>
+                        </View>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={[s.pickThumbWrap, s.pickThumbPlaceholder]}>
+                        <Text style={{ fontSize: 18 }}>🏋️</Text>
+                      </View>
+                    )}
                     <Text style={s.pickName} numberOfLines={1}>{machine.name}</Text>
                     <Text style={s.pickCheck}>{selected ? '✓' : '+'}</Text>
                   </TouchableOpacity>
@@ -755,6 +782,23 @@ export default function ProgramScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        <Modal visible={!!zoomImage} transparent animationType="fade" onRequestClose={() => setZoomImage(null)}>
+          <View style={s.zoomOverlay}>
+            <TouchableOpacity style={s.zoomCloseBtn} onPress={() => setZoomImage(null)}>
+              <Text style={s.zoomCloseText}>✕</Text>
+            </TouchableOpacity>
+            <ScrollView
+              style={{ flex: 1, width: '100%' }}
+              contentContainerStyle={s.zoomScrollContent}
+              maximumZoomScale={4}
+              minimumZoomScale={1}
+              centerContent
+            >
+              {zoomImage && <Image source={{ uri: zoomImage }} style={s.zoomImage} resizeMode="contain" />}
+            </ScrollView>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     );
   }
@@ -845,6 +889,7 @@ export default function ProgramScreen() {
 }
 
 const ACCENT = '#f04a18';
+const SCREEN = Dimensions.get('window');
 
 const s = StyleSheet.create({
   container:        { flex: 1, backgroundColor: '#0b0d13' },
@@ -923,6 +968,15 @@ const s = StyleSheet.create({
   nextBtnOff:       { backgroundColor: '#3c1a08', opacity: 0.5 },
   nextText:         { color: '#fff', fontSize: 15, fontWeight: '700' },
 
+  // Mode choice (AI vs manual) — first, prominent decision
+  modeChoiceRow:    { flexDirection: 'row', gap: 12 },
+  modeChoiceCard:   { flex: 1, backgroundColor: '#1c2030', borderWidth: 2, borderColor: '#22273a', borderRadius: 18, padding: 18, alignItems: 'center', gap: 8 },
+  modeChoiceCardSel: { borderColor: ACCENT, backgroundColor: 'rgba(240,74,24,.07)' },
+  modeChoiceIcon:   { fontSize: 32 },
+  modeChoiceTitle:  { fontSize: 14, fontWeight: '800', color: '#dde3f0', textAlign: 'center' },
+  modeChoiceSub:    { fontSize: 11.5, color: '#7a85a0', textAlign: 'center', lineHeight: 15 },
+  modeChoiceCheck:  { position: 'absolute', top: 10, right: 10, color: ACCENT, fontSize: 16, fontWeight: '800' },
+
   // Shared day schedule
   dayList:          { paddingHorizontal: 16, gap: 8 },
   dayCard:          { backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 16, overflow: 'hidden' },
@@ -961,10 +1015,22 @@ const s = StyleSheet.create({
   pickRowSel:       { borderColor: '#1ecfa4', backgroundColor: 'rgba(30,207,164,.06)' },
   pickName:         { fontSize: 14, fontWeight: '600', color: '#dde3f0', flex: 1, marginRight: 8 },
   pickCheck:        { fontSize: 16, fontWeight: '800', color: '#1ecfa4' },
+  pickThumbWrap:    { width: 44, height: 44, borderRadius: 10, overflow: 'hidden', marginRight: 10, flexShrink: 0 },
+  pickThumbPlaceholder: { backgroundColor: '#242840', alignItems: 'center', justifyContent: 'center' },
+  pickThumb:        { width: '100%', height: '100%' },
+  pickThumbZoomBadge: { position: 'absolute', bottom: 1, right: 1, width: 18, height: 18, borderRadius: 9, backgroundColor: 'rgba(11,13,19,.75)', alignItems: 'center', justifyContent: 'center' },
+  pickThumbZoomText: { fontSize: 9 },
   gateCard:         { margin: 16, backgroundColor: '#1c2030', borderWidth: 1.5, borderColor: '#22273a', borderRadius: 16, padding: 24, alignItems: 'center' },
   gateIcon:         { fontSize: 36, marginBottom: 12 },
   gateTitle:        { fontSize: 17, fontWeight: '800', color: '#dde3f0', marginBottom: 8, textAlign: 'center' },
   gateSub:          { fontSize: 13, color: '#7a85a0', textAlign: 'center', lineHeight: 19, marginBottom: 18 },
   gateBtn:          { backgroundColor: ACCENT, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12 },
   gateBtnText:      { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  // Zoom modal (same pattern as exercise/select-machine.tsx)
+  zoomOverlay:      { flex: 1, backgroundColor: 'rgba(6,7,11,.97)', alignItems: 'center', justifyContent: 'center' },
+  zoomScrollContent: { flexGrow: 1, width: SCREEN.width, alignItems: 'center', justifyContent: 'center' },
+  zoomImage:        { width: SCREEN.width, height: SCREEN.height * 0.85 },
+  zoomCloseBtn:     { position: 'absolute', top: 56, right: 20, zIndex: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(28,32,48,.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,.15)', alignItems: 'center', justifyContent: 'center' },
+  zoomCloseText:    { color: '#dde3f0', fontSize: 18, fontWeight: '700' },
 });
